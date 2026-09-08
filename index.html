@@ -249,6 +249,7 @@
       <div class="meta" id="metaLine">불러오는 중…</div>
       <div class="tools">
         <label class="chk"><input type="checkbox" id="onlyIssue"> 이슈·미확인만 보기</label>
+        <button class="btn" id="btnReset">이 달 기준값 다시 적용</button>
         <button class="btn" id="btnPaste">시트 붙여넣기</button>
         <button class="btn" id="btnYear">연간 현황 보기</button>
         <button class="btn" id="btnCsv">엑셀(CSV)로 내려받기</button>
@@ -346,23 +347,37 @@ const now = () => { const d=new Date();
 const blank = () => ({status:'none', recvDate:'', issue:'', issueNote:'', pmNote:'',
                       ackWV:false, ackPM:false, atFac:'', atWV:'', atPM:'', seed:false});
 /* 시트에 수령여부만 있고 수령일자가 없는 기간 — 수령완료로 표시, 날짜는 공란 */
-const SEED_DONE = [2,3,4,5,6,7,8];
-const SEED_SOME = { 9: [1,2,5,8,9] };
-/* 일부 기관만 수령한 달 — 수령완료 기관의 순번만 적는다. 나머지는 미확인(수령 전) */
-const SEED_SOME = { 9: [1,2,5,8,9] };   // 9월: 루시모자원·성보재활원·인애빌·푸르뫼·한나빌리지
-function seedMonth(m, store){
-  const some = SEED_SOME[m];
-  if(!SEED_DONE.includes(m) && !some) return store;
-  const touched = Object.values(store).some(d =>
-    d.status!=='none' || d.recvDate || d.issue || d.issueNote || d.pmNote || d.ackWV || d.ackPM);
-  if(touched) return store;
+/* ══════════════════════════════════════════════════════════
+   월별 수령 실적 기준값
+     'all'      → 10개 기관 전부 수령완료
+     [1,2,5]    → 해당 순번 기관만 수령완료, 나머지는 미확인
+     적지 않은 달 → 전부 미확인
+
+   기관 순번
+     1 루시모자원   2 성보재활원   3 성심모자원   4 영락모자원   5 인애빌
+     6 인제요양원   7 평화모자원   8 푸르뫼 Mom&Kids   9 한나빌리지   10 해오름빌
+
+   ★ 이 값은 해당 월을 처음 열 때 한 번만 사용됩니다.
+     이후에는 웹페이지에서 입력한 내용이 자동 저장되어 항상 우선합니다.
+     기준값을 다시 씌우려면 상단의 «이 달 기준값 다시 적용» 버튼을 누르세요.
+   ══════════════════════════════════════════════════════════ */
+const RECORDS = {
+  2:'all', 3:'all', 4:'all', 5:'all', 6:'all', 7:'all', 8:'all',
+  9:[1,2,5,8,9]        // 9월: 루시모자원·성보재활원·인애빌·푸르뫼 Mom&Kids·한나빌리지 수령
+};
+
+/* 기준값은 그 달을 처음 여는 순간 한 번만 채워진다.
+   한 번 저장된 뒤에는 웹페이지에서 입력한 내용이 항상 우선이며,
+   기준값을 다시 씌우고 싶을 때만 상단의 «이 달 기준값 다시 적용» 버튼을 쓴다. */
+function applyDefaults(m, store){
+  const spec = RECORDS[m];
+  if(spec === undefined) return false;
   FACILITIES.forEach(f => {
-    const got = some ? some.includes(f.no) : true;
+    const got = (spec === 'all') || (Array.isArray(spec) && spec.indexOf(f.no) !== -1);
     store[f.no].status = got ? 'done' : 'none';
-    store[f.no].recvDate = '';
     store[f.no].seed = true;
   });
-  return store;
+  return true;
 }
 /* ─────────────────────────────────────────────────────────
    저장소 설정
@@ -370,7 +385,7 @@ function seedMonth(m, store){
    시설 · 월드비전 · 풀무원샘물이 같은 데이터를 공유합니다.
    비워두면 이 브라우저에만 저장되는 임시 모드로 동작합니다.
    ───────────────────────────────────────────────────────── */
-const API_URL = "https://script.google.com/macros/s/AKfycbw7rbggEUFgbKmmE7cgqf32U_nQoHZtDlur1ZiJIiyPQFdrlkVvwohau6U-aADIfwo_/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyY2SRz9FTeAkEZPpD7UJPosL-UN2oFLC46oc_VSsqg_iM7M9f2rbrTIqNo_R1i4uDLuQ/exec";
 
 const Store = {
   get mode(){ return API_URL ? 'shared' : 'local'; },
@@ -421,11 +436,21 @@ function migrate(d){
 async function loadMonth(){
   $('metaLine').textContent = '불러오는 중…';
   data = {};
-  let raw = {};
-  try{ const r = await Store.get(key(month)); if(r && r.value) raw = JSON.parse(r.value); }catch(e){}
+  let raw = {}, stored = false;
+  try{
+    const r = await Store.get(key(month));
+    if(r && r.value){
+      const j = JSON.parse(r.value);
+      raw = (j && j.rows) ? j.rows : (j || {});
+      stored = Object.keys(raw).length > 0;
+    }
+  }catch(e){}
   FACILITIES.forEach(f => { data[f.no] = migrate(raw[f.no]); });
-  seedMonth(month, data);
-  render(); metaText(); setSaveState('','자동 저장');
+  const seeded = stored ? false : applyDefaults(month, data);
+  render(); metaText();
+  setSaveState(stored ? 'saved' : '', stored ? '불러옴' : '자동 저장');
+  if(seeded) save(true);          // 최초 1회만 기록을 남긴다
+  startPoll();
 }
 function metaText(){
   const t = [];
@@ -441,16 +466,24 @@ function setSaveState(cls, text){
   el.className = 'autosave' + (cls ? ' '+cls : '');
   el.textContent = text;
 }
-async function save(silent){
+function payload(){ return JSON.stringify({savedAt: now(), rows: data}); }
+
+async function save(silent, attempt){
+  attempt = attempt || 0;
   clearTimeout(saveTimer);
   setSaveState('saving','저장 중…');
   try{
-    await Store.set(key(month), JSON.stringify(data));
+    await Store.set(key(month), payload());
     dirty = false; metaText();
     if(yearCache) yearCache[month] = data;
     const d = new Date();
     setSaveState('saved', `저장됨 ${pad(d.getHours())}:${pad(d.getMinutes())}`);
   }catch(e){
+    if(attempt < 2){                       // 통신이 끊겼을 때 자동 재시도
+      setSaveState('saving', `저장 재시도 중… (${attempt+1}/2)`);
+      setTimeout(() => save(true, attempt+1), 1500 * (attempt+1));
+      return;
+    }
     setSaveState('err','저장 실패 · 눌러서 다시 시도');
     $('autosave').onclick = () => save(true);
   }
@@ -656,10 +689,13 @@ $('btnYear').onclick = async () => {
     for(const m of MONTHS){
       if(m === month){ yearCache[m] = data; continue; }
       try{ const r = await Store.get(key(m));
-           const raw = r&&r.value ? JSON.parse(r.value) : {};
+           let raw = {}, stored = false;
+           if(r && r.value){ const j = JSON.parse(r.value);
+             raw = (j && j.rows) ? j.rows : (j || {}); stored = Object.keys(raw).length > 0; }
            const o = {}; FACILITIES.forEach(f => o[f.no] = migrate(raw[f.no]));
-           yearCache[m] = seedMonth(m, o); }
-      catch(e){ const o={}; FACILITIES.forEach(f=>o[f.no]=blank()); yearCache[m]=seedMonth(m,o); }
+           if(!stored) applyDefaults(m, o);
+           yearCache[m] = o; }
+      catch(e){ const o={}; FACILITIES.forEach(f=>o[f.no]=blank()); applyDefaults(m,o); yearCache[m]=o; }
     }
   }
   drawYear();
@@ -782,6 +818,11 @@ function applyPaste(){
   $('pasteBox').value = '';
   toast(`${month}월분 ${hit}개 기관을 반영했습니다`);
 }
+$('btnReset').onclick = () => {
+  if(!confirm(`${YEAR}년 ${month}월의 수령여부를 코드에 적힌 기준값으로 되돌립니다.\n입력하신 이슈 내용과 풀무원 회신은 그대로 유지됩니다.`)) return;
+  if(!applyDefaults(month, data)){ toast(`${month}월은 기준값이 지정되어 있지 않습니다`); return; }
+  render(); save(true); toast(`${month}월 수령여부를 기준값으로 되돌렸습니다`);
+};
 $('btnPaste').onclick = () => {
   const on = $('paste').classList.toggle('on');
   $('pasteMonth').textContent = `${YEAR}년 ${month}월분`;
@@ -797,7 +838,41 @@ $('btnPrint').onclick = () => window.print();
 document.addEventListener('focusout', e => {
   if(dirty && e.target.closest('textarea[data-act], select[data-act], input[data-act]')) save(true);
 });
-window.addEventListener('beforeunload', () => { if(dirty) save(true); });
+/* 창을 닫거나 탭을 벗어날 때 — 남은 입력을 확실히 보낸다 */
+window.addEventListener('pagehide', () => {
+  if(!dirty) return;
+  if(API_URL && navigator.sendBeacon){
+    const body = JSON.stringify({key:key(month), value:payload()});
+    navigator.sendBeacon(API_URL, new Blob([body], {type:'text/plain;charset=utf-8'}));
+    dirty = false;
+  } else save(true);
+});
+document.addEventListener('visibilitychange', () => { if(document.hidden && dirty) save(true); });
+
+/* 다른 담당자가 입력한 내용을 45초마다 자동으로 가져온다 */
+let pollTimer = null;
+function startPoll(){
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    if(dirty || document.hidden) return;
+    if(document.activeElement && document.activeElement.closest('[data-act]')) return;
+    if($('paste').classList.contains('on')) return;
+    try{
+      const r = await Store.get(key(month));
+      if(!r || !r.value) return;
+      const j = JSON.parse(r.value);
+      const rows = (j && j.rows) ? j.rows : j;
+      const fresh = {};
+      FACILITIES.forEach(f => fresh[f.no] = migrate(rows[f.no]));
+      if(JSON.stringify(fresh) === JSON.stringify(data)) return;
+      data = fresh;
+      const y = window.scrollY; render(); window.scrollTo(0, y);
+      metaText();
+      const d = new Date();
+      setSaveState('saved', `최신 반영 ${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    }catch(e){}
+  }, 45000);
+}
 
 if(Store.mode === 'local') $('localnote').classList.add('on');
 buildMonths();
