@@ -347,6 +347,7 @@ const blank = () => ({status:'none', recvDate:'', issue:'', issueNote:'', pmNote
                       ackWV:false, ackPM:false, atFac:'', atWV:'', atPM:'', seed:false});
 /* 시트에 수령여부만 있고 수령일자가 없는 기간 — 수령완료로 표시, 날짜는 공란 */
 const SEED_DONE = [2,3,4,5,6,7,8];
+const SEED_SOME = { 9: [1,2,5,8,9] };
 /* 일부 기관만 수령한 달 — 수령완료 기관의 순번만 적는다. 나머지는 미확인(수령 전) */
 const SEED_SOME = { 9: [1,2,5,8,9] };   // 9월: 루시모자원·성보재활원·인애빌·푸르뫼·한나빌리지
 function seedMonth(m, store){
@@ -369,7 +370,7 @@ function seedMonth(m, store){
    시설 · 월드비전 · 풀무원샘물이 같은 데이터를 공유합니다.
    비워두면 이 브라우저에만 저장되는 임시 모드로 동작합니다.
    ───────────────────────────────────────────────────────── */
-const API_URL = "https://script.google.com/macros/s/AKfycbw-R4MQ79RYFbaiO6fcHiDbxuq1nhJEW6tr4nrao52W6_6x120SxxnM8hJkqC7RKFPe/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw7rbggEUFgbKmmE7cgqf32U_nQoHZtDlur1ZiJIiyPQFdrlkVvwohau6U-aADIfwo_/exec";
 
 const Store = {
   get mode(){ return API_URL ? 'shared' : 'local'; },
