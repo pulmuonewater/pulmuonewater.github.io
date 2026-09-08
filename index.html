@@ -346,13 +346,21 @@ const now = () => { const d=new Date();
 const blank = () => ({status:'none', recvDate:'', issue:'', issueNote:'', pmNote:'',
                       ackWV:false, ackPM:false, atFac:'', atWV:'', atPM:'', seed:false});
 /* 시트에 수령여부만 있고 수령일자가 없는 기간 — 수령완료로 표시, 날짜는 공란 */
-const SEED_DONE = [2,3,4,5,6,7,8,9];
+const SEED_DONE = [2,3,4,5,6,7,8];
+/* 일부 기관만 수령한 달 — 수령완료 기관의 순번만 적는다. 나머지는 미확인(수령 전) */
+const SEED_SOME = { 9: [1,2,5,8,9] };   // 9월: 루시모자원·성보재활원·인애빌·푸르뫼·한나빌리지
 function seedMonth(m, store){
-  if(!SEED_DONE.includes(m)) return store;
+  const some = SEED_SOME[m];
+  if(!SEED_DONE.includes(m) && !some) return store;
   const touched = Object.values(store).some(d =>
     d.status!=='none' || d.recvDate || d.issue || d.issueNote || d.pmNote || d.ackWV || d.ackPM);
   if(touched) return store;
-  FACILITIES.forEach(f => { store[f.no].status = 'done'; store[f.no].recvDate = ''; store[f.no].seed = true; });
+  FACILITIES.forEach(f => {
+    const got = some ? some.includes(f.no) : true;
+    store[f.no].status = got ? 'done' : 'none';
+    store[f.no].recvDate = '';
+    store[f.no].seed = true;
+  });
   return store;
 }
 /* ─────────────────────────────────────────────────────────
