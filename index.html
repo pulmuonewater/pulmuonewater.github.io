@@ -1,0 +1,904 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>생수 정기배송 수령 확인 | 월드비전 × 풀무원샘물</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --ink:#10242E; --ink-soft:#5B7280; --ink-faint:#8FA3AC;
+    --line:#DCE5E8; --line-soft:#EAF0F2;
+    --paper:#EDF3F5; --card:#FFFFFF;
+    --spring:#5E9E1F; --spring-deep:#3D7211; --spring-wash:#F3F9EA; --spring-line:#D8EABE;
+    --pm-bright:#8CC63F; --pm-deep:#4E8C15;
+    --wv:#FF5515; --wv-wash:#FFECE5; --wv-ink:#C43C08;
+    --fac:#4B7A8C; --fac-wash:#F0F4F6;
+    --ok:#0E8A63; --warn:#C4761A; --bad:#C43D3D; --idle:#9FB0B8;
+    --r:7px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:Pretendard,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    font-size:14px; line-height:1.55;
+    -webkit-font-smoothing:antialiased; font-variant-numeric:tabular-nums;
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:0 22px 80px}
+
+  header{background:#15272F;color:#fff;border-top:4px solid var(--wv);position:relative}
+  header::after{content:"";position:absolute;top:-4px;right:0;width:34%;height:4px;background:var(--pm-bright)}
+
+  .head-in{max-width:1240px;margin:0 auto;padding:22px 22px 0}
+  .brandline{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px}
+  .brandline b{font-weight:700;font-size:15px;letter-spacing:-.01em}
+  .brandline span{color:rgba(255,255,255,.62);font-size:13px}
+  .wvmark{display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--wv);transform:translateY(-1px)}
+  .pmmark{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--pm-bright);transform:translateY(-1px)}
+  h1{margin:10px 0 2px;font-size:27px;font-weight:700;letter-spacing:-.03em}
+  .subhead{color:rgba(255,255,255,.72);font-size:13.5px;margin-bottom:18px}
+  .subhead em{font-style:normal;color:#fff}
+  .months{display:flex;gap:2px;overflow-x:auto;scrollbar-width:thin;padding-top:4px}
+  .months button{flex:0 0 auto;background:transparent;border:0;border-bottom:3px solid transparent;
+    color:rgba(255,255,255,.66);font:inherit;font-weight:500;padding:9px 16px 8px;cursor:pointer;border-radius:4px 4px 0 0}
+  .months button:hover{color:#fff;background:rgba(255,255,255,.10)}
+  .months button[aria-current="true"]{color:var(--ink);background:var(--paper);border-bottom-color:var(--paper);font-weight:700}
+
+  .board{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-top:22px}
+  .board-head{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;
+    padding:16px 20px 13px;border-bottom:1px solid var(--line-soft)}
+  .board-title{font-size:15px;font-weight:700;letter-spacing:-.02em}
+  .board-title span{font-weight:500;color:var(--ink-soft);font-size:13px;margin-left:8px}
+  .counts{display:flex;gap:22px}
+  .counts div{min-width:56px;text-align:right}
+  .counts b{display:block;font-size:23px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
+  .counts span{font-size:11.5px;color:var(--ink-soft)}
+  .c-done b{color:var(--ok)} .c-issue b{color:var(--bad)} .c-wait b{color:var(--ink-faint)}
+  .c-ack b{color:var(--spring)}
+
+  .chips{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:15px 20px 18px}
+  .chip{text-align:left;font:inherit;cursor:pointer;background:#F7FAFB;border:1px solid var(--line);
+    border-left:4px solid var(--idle);border-radius:5px;padding:10px 12px;transition:border-color .12s,background .12s}
+  .chip:hover{background:#fff;border-color:var(--spring);border-left-color:var(--spring)}
+  .chip[data-s="done"]{border-left-color:var(--ok);background:#F0F8F5}
+  .chip[data-s="part"]{border-left-color:var(--warn);background:#FDF7EF}
+  .chip[data-s="miss"]{border-left-color:var(--bad);background:#FCF2F2}
+  .chip-no{color:var(--ink-faint);font-size:11.5px;font-weight:700;margin-right:6px}
+  .chip-name{font-weight:700;font-size:13.5px;letter-spacing:-.02em}
+  .chip-state{display:block;margin-top:3px;font-size:11.5px;color:var(--ink-soft)}
+  .chip[data-s="done"] .chip-state{color:var(--ok)}
+  .chip[data-s="part"] .chip-state{color:var(--warn)}
+  .chip[data-s="miss"] .chip-state{color:var(--bad)}
+  .chip-flag{color:var(--bad);font-weight:700}
+  .chip-day{display:block;margin-top:3px;font-size:11.5px;color:var(--ink);font-weight:700;letter-spacing:-.01em}
+  .chip-nodate{display:block;margin-top:3px;font-size:11.5px;color:var(--ink-faint);font-weight:600}
+  .chip-wait{display:block;margin-top:3px;font-size:11px;color:var(--wv-ink);font-weight:700}
+  .chip-acks{display:flex;gap:4px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(0,0,0,.07)}
+  .ackdot{flex:1;text-align:center;font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:-.02em;
+    padding:3px 2px;border-radius:3px;background:#fff;border:1px solid var(--line);color:var(--ink-faint)}
+  .ackdot.on.wv{background:var(--wv);border-color:var(--wv);color:#fff}
+  .ackdot.on.pm{background:var(--spring);border-color:var(--spring);color:#fff}
+
+  .board-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
+    padding:12px 20px;border-top:1px solid var(--line-soft);background:#F7FAFB;border-radius:0 0 var(--r) var(--r)}
+  .meta{font-size:12.5px;color:var(--ink-soft)}
+  .meta b{color:var(--ink);font-weight:600}
+  .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .chk{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;white-space:nowrap}
+  .btn{background:#fff;border:1px solid var(--line);color:var(--ink);font:inherit;font-size:12.5px;
+    padding:7px 13px;border-radius:5px;cursor:pointer;white-space:nowrap}
+  .btn:hover{border-color:var(--spring);color:var(--spring)}
+  .localnote{display:none;margin-top:18px;padding:11px 15px;border-radius:6px;
+    background:#FFF6E8;border:1px solid #F0D9AE;color:#8A5A12;font-size:12.5px;line-height:1.6}
+  .localnote.on{display:block}
+  .autosave{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);
+    padding:6px 11px;border-radius:5px;background:#fff;border:1px solid var(--line);white-space:nowrap}
+  .autosave::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ink-faint)}
+  .autosave.saving::before{background:var(--warn)}
+  .autosave.saved::before{background:var(--ok)}
+  .autosave.err{color:var(--bad);border-color:var(--bad);cursor:pointer}
+  .autosave.err::before{background:var(--bad)}
+  .btn-solid{background:var(--spring);border-color:var(--spring);color:#fff}
+  .btn-solid:hover{background:var(--spring-deep);border-color:var(--spring-deep);color:#fff}
+
+  .paste{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-top:10px;padding:18px 20px;display:none}
+  .paste.on{display:block}
+  .paste h2{margin:0 0 4px;font-size:15px;font-weight:700;letter-spacing:-.02em}
+  .paste p{margin:0 0 12px;font-size:12.5px;color:var(--ink-soft);line-height:1.6}
+  .paste textarea{min-height:150px;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .paste-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--ink-soft)}
+  .paste-bar b{color:var(--ink)}
+  .paste-bar button:last-child{margin-left:0}
+  .paste-bar span:nth-child(2){margin-right:auto;color:var(--spring);font-weight:600}
+  .year{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-top:10px;padding:18px 20px;display:none}
+  .year.on{display:block}
+  .year h2{margin:0 0 4px;font-size:15px;font-weight:700;letter-spacing:-.02em}
+  .year p{margin:0 0 14px;font-size:12.5px;color:var(--ink-soft)}
+  .ytable{width:100%;border-collapse:collapse;font-size:12.5px}
+  .ytable th,.ytable td{border-bottom:1px solid var(--line-soft);padding:8px 4px;text-align:center}
+  .ytable th:first-child,.ytable td:first-child{text-align:left;padding-left:2px;white-space:nowrap;font-weight:600}
+  .ytable thead th{color:var(--ink-faint);font-weight:600;font-size:11.5px;border-bottom:1px solid var(--line)}
+  .ytable td.cur{background:var(--spring-wash)}
+  .dot{display:inline-block;width:15px;height:15px;border-radius:50%;background:#E7EDEF}
+  .dot[data-s="done"]{background:var(--ok)}
+  .dot[data-s="part"]{background:var(--warn)}
+  .dot[data-s="miss"]{background:var(--bad)}
+  .dot.iss{box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--bad)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--ink-soft)}
+  .legend span{display:flex;align-items:center;gap:6px}
+
+  .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:20px 0 6px}
+  .role{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--fac);
+    border-radius:5px;padding:12px 14px}
+  .role.wv{border-top-color:var(--wv)} .role.pm{border-top-color:var(--pm-bright)}
+  .role b{display:block;font-size:13px;font-weight:700;letter-spacing:-.02em;margin-bottom:2px}
+  .role p{margin:0;font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+
+  /* ── 시설 행 ── */
+  .list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .row{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--idle);
+    border-radius:var(--r);padding:0;overflow:hidden;scroll-margin-top:16px}
+  .row[data-s="done"]{border-left-color:var(--ok)}
+  .row[data-s="part"]{border-left-color:var(--warn)}
+  .row[data-s="miss"]{border-left-color:var(--bad)}
+  .row.hide{display:none}
+  .row.flash{box-shadow:0 0 0 3px rgba(11,110,143,.25)}
+
+  .rhead{display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px;
+    padding:13px 20px;border-bottom:1px solid var(--line-soft);background:#FBFDFD}
+  .rname{font-weight:700;font-size:17px;letter-spacing:-.02em;min-width:170px}
+  .rname .no{color:var(--ink-faint);font-weight:600;margin-right:8px;font-size:13px}
+  .rqty{font-size:12.5px;color:var(--ink-soft);white-space:nowrap}
+  .rstate{display:flex;align-items:center;gap:14px;margin-left:auto;flex-wrap:wrap}
+  .fieldline{display:flex;align-items:center;gap:9px;white-space:nowrap}
+  .fieldline > span{font-size:12px;color:var(--ink-faint);font-weight:600;white-space:nowrap}
+  .segbtns{display:flex;gap:4px}
+  .segbtns button{font:inherit;font-size:12.5px;padding:7px 14px;background:#fff;
+    border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--ink-soft);white-space:nowrap}
+  .segbtns button:hover{border-color:var(--ink-faint)}
+  .segbtns button[aria-pressed="true"]{color:#fff;font-weight:600}
+  .segbtns button[data-v="done"][aria-pressed="true"]{background:var(--ok);border-color:var(--ok)}
+  .segbtns button[data-v="part"][aria-pressed="true"]{background:var(--warn);border-color:var(--warn)}
+  .segbtns button[data-v="miss"][aria-pressed="true"]{background:var(--bad);border-color:var(--bad)}
+  .dateinput{font:inherit;font-size:12.5px;padding:6px 9px;border:1px solid var(--line);
+    border-radius:5px;background:#fff;width:158px}
+
+  .rbody{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px 20px 18px}
+  .panel{border:1px solid var(--line-soft);border-radius:6px;padding:13px 14px 15px;background:var(--fac-wash)}
+  .panel.pm{background:var(--spring-wash);border-color:var(--spring-line)}
+  .panel-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .panel-h b{font-size:12.5px;font-weight:700;letter-spacing:-.02em}
+  .tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10.5px;font-weight:700;white-space:nowrap}
+  .tag-fac{background:#fff;color:var(--fac);border:1px solid #D5E0E4}
+  .tag-pm{background:#fff;color:var(--spring);border:1px solid var(--spring-line)}
+  .f label{display:block;font-size:11.5px;color:var(--ink-faint);font-weight:600;margin-bottom:5px}
+  .f + .f{margin-top:11px}
+  select,textarea{font:inherit;width:100%;border:1px solid var(--line);border-radius:5px;
+    padding:8px 10px;background:#fff;color:var(--ink);font-size:13px}
+  textarea{resize:vertical;min-height:96px;line-height:1.55}
+  select:focus,textarea:focus,.dateinput:focus{outline:2px solid var(--spring);outline-offset:1px;border-color:transparent}
+  select.has-issue{border-color:var(--bad);color:var(--bad);font-weight:600;background:#FDF3F3}
+  .need{margin-top:7px;font-size:11.5px;color:var(--bad);font-weight:600;display:none}
+  .need.on{display:block}
+
+  .rfoot{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;
+    padding:11px 20px;border-top:1px solid var(--line-soft);background:#FBFDFD}
+  .ack{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;white-space:nowrap}
+  .ack input{width:15px;height:15px}
+  .ack.wv input{accent-color:var(--wv)} .ack.pm input{accent-color:var(--spring)}
+  .ack.wv.on{color:var(--wv-ink);font-weight:600} .ack.pm.on{color:var(--spring);font-weight:600}
+  .stamp{margin-left:auto;color:var(--ink-faint);font-size:11.5px;text-align:right;line-height:1.6}
+  .stamp i{font-style:normal;color:var(--ink-soft);font-weight:600}
+  .stamp em{font-style:normal;color:var(--line);margin:0 7px}
+
+  .empty{background:var(--card);border:1px dashed var(--line);border-radius:var(--r);
+    padding:36px;text-align:center;color:var(--ink-soft)}
+  footer{margin-top:28px;font-size:12px;color:var(--ink-faint);line-height:1.7}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,14px);opacity:0;pointer-events:none;
+    background:var(--ink);color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;transition:.2s;z-index:9}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:1080px){ .chips{grid-template-columns:repeat(3,1fr)} .roles{grid-template-columns:1fr} }
+  @media (max-width:860px){
+    .rbody{grid-template-columns:1fr}
+    .rstate{margin-left:0;width:100%}
+    .segbtns button{flex:1}
+    .stamp{margin-left:0;text-align:left;width:100%}
+    h1{font-size:23px}
+    .chips{grid-template-columns:repeat(2,1fr)}
+    .ytable{font-size:11.5px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  @media print{
+    header{background:#fff;color:#000}
+    .months,.tools,.toast{display:none}
+    .row{break-inside:avoid;border:1px solid #ccc}
+    body{background:#fff}
+  }
+</style>
+
+<header>
+  <div class="head-in">
+    <div class="brandline">
+      <b><span class="wvmark"></span> 월드비전</b><span>×</span>
+      <b><span class="pmmark"></span> 풀무원샘물</b>
+      <span>· 사회복지시설 생수 정기후원</span>
+    </div>
+    <h1>생수 정기배송 수령 확인</h1>
+    <div class="subhead">매월 15일경 <em>10개 시설</em>에 정기배송 · 시설별 <em>10BOX(200개)</em> · 월 합계 <em>100BOX(2,000개)</em></div>
+    <nav class="months" id="months" aria-label="배송 월 선택"></nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="localnote" id="localnote">
+    임시 저장 모드입니다. 입력한 내용이 이 브라우저에만 남고 다른 담당자에게는 보이지 않습니다.
+    공유하려면 <b>index.html</b> 안의 <b>API_URL</b> 에 Apps Script 웹앱 주소를 넣어주세요.
+  </div>
+
+  <section class="board">
+    <div class="board-head">
+      <div class="board-title">기관별 수령 현황<span>기관을 누르면 해당 시설 기록으로 이동합니다</span></div>
+      <div class="counts">
+        <div class="c-done"><b id="cDone">0</b><span>수령완료</span></div>
+        <div class="c-issue"><b id="cIssue">0</b><span>배송이슈</span></div>
+        <div class="c-wait"><b id="cWait">10</b><span>확인대기</span></div>
+        <div class="c-ack"><b id="cAck">0</b><span>양측 확인</span></div>
+      </div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="board-bar">
+      <div class="meta" id="metaLine">불러오는 중…</div>
+      <div class="tools">
+        <label class="chk"><input type="checkbox" id="onlyIssue"> 이슈·미확인만 보기</label>
+        <button class="btn" id="btnReset">이 달 기준값 다시 적용</button>
+        <button class="btn" id="btnPaste">시트 붙여넣기</button>
+        <button class="btn" id="btnYear">연간 현황 보기</button>
+        <button class="btn" id="btnCsv">엑셀(CSV)로 내려받기</button>
+        <button class="btn" id="btnPrint">인쇄</button>
+        <span class="autosave" id="autosave">자동 저장</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="paste" id="paste">
+    <h2>구글 시트에서 붙여넣기</h2>
+    <p>시트에서 <b>기관명 · 수령여부 · 기타 오류사항</b>이 포함된 행을 그대로 복사해 아래에 붙여넣으세요.
+       기관명을 기준으로 자동 인식합니다. O·완료·수령 → 수령완료, △·부분 → 부분수령, X·미수령 → 미수령.
+       날짜(9/15, 9월 15일)가 있으면 수령일로 들어갑니다.</p>
+    <textarea id="pasteBox" placeholder="1&#9;루시모자원&#9;10&#9;200&#9;O&#9;
+2&#9;성보재활원&#9;10&#9;200&#9;X&#9;배송 지연, 9/18 도착"></textarea>
+    <div class="paste-bar">
+      <span>적용 대상 <b id="pasteMonth"></b></span>
+      <span id="pasteInfo"></span>
+      <button class="btn" id="btnPasteCancel">닫기</button>
+      <button class="btn btn-solid" id="btnPasteApply">이 달에 반영</button>
+    </div>
+  </section>
+
+  <section class="year" id="year">
+    <h2>2026년 기관별 월간 수령 현황</h2>
+    <p id="yearNote">불러오는 중…</p>
+    <div style="overflow-x:auto"><table class="ytable" id="ytable"></table></div>
+    <div class="legend">
+      <span><i class="dot" data-s="done"></i> 수령완료</span>
+      <span><i class="dot" data-s="part"></i> 부분수령</span>
+      <span><i class="dot" data-s="miss"></i> 미수령</span>
+      <span><i class="dot"></i> 미확인</span>
+      <span><i class="dot iss" data-s="done"></i> 테두리 표시는 배송이슈 기록 있음</span>
+    </div>
+  </section>
+
+  <div class="roles">
+    <div class="role">
+      <b>시설 담당자</b>
+      <p>생수 수령 여부 · 수령일 체크, 배송 이슈 발생 시 등록해주세요.</p>
+    </div>
+    <div class="role wv">
+      <b>월드비전 담당자</b>
+      <p>시설별 수령 여부 · 배송이슈 확인</p>
+    </div>
+    <div class="role pm">
+      <b>풀무원샘물 담당자</b>
+      <p>배송이슈 확인 · 조치 의견 회신</p>
+    </div>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <footer>
+    이 페이지의 입력값은 시설·월드비전·풀무원샘물이 함께 보는 공용 기록으로 저장됩니다. 개인정보나 대외비는 입력하지 마세요.<br>
+    원본 대장: 「풀무원 정기배송 확인 SHEET」 구글 시트 · 월 마감 후 CSV로 내려받아 보관하시기 바랍니다.
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const FACILITIES = [
+  {no:1,  name:'루시모자원',       box:10, ea:200},
+  {no:2,  name:'성보재활원',       box:10, ea:200},
+  {no:3,  name:'성심모자원',       box:10, ea:200},
+  {no:4,  name:'영락모자원',       box:10, ea:200},
+  {no:5,  name:'인애빌',           box:10, ea:200},
+  {no:6,  name:'인제요양원',       box:10, ea:200},
+  {no:7,  name:'평화모자원',       box:10, ea:200},
+  {no:8,  name:'푸르뫼 Mom&Kids',  box:10, ea:200},
+  {no:9,  name:'한나빌리지',       box:10, ea:200},
+  {no:10, name:'해오름빌',         box:10, ea:200},
+];
+const YEAR = 2026;
+const MONTHS = [2,3,4,5,6,7,8,9,10,11,12];
+const ISSUES = ['배송 지연','수량 부족','제품 파손·누수','오배송(타 시설)','부재로 미수령','배송지·연락처 변경','수령처 요청사항','기타'];
+const STATUS_LABEL = {done:'수령완료', part:'부분수령', miss:'미수령', none:'미확인'};
+const SIDE = {status:'fac', recvDate:'fac', issue:'fac', issueNote:'fac',
+              pmNote:'pm', ackPM:'pm', ackWV:'wv'};
+const SIDE_LABEL = {fac:'시설 입력', wv:'월드비전 확인', pm:'풀무원샘물 회신'};
+
+let month = (new Date().getMonth()+1);
+if(!MONTHS.includes(month)) month = 6;
+let data = {};
+let dirty = false, saveTimer = null;
+let yearCache = null;
+
+/* 화면 요소가 없어도 스크립트 전체가 멈추지 않도록 빈 껍데기를 돌려준다 */
+const NOOP_EL = {
+  classList:{add(){},remove(){},toggle(){return false},contains(){return false}},
+  style:{}, dataset:{}, value:'', textContent:'', innerHTML:'', checked:false,
+  addEventListener(){}, removeEventListener(){}, scrollIntoView(){}, focus(){}, click(){},
+  querySelector(){return null}, querySelectorAll(){return []}, closest(){return null},
+  getAttribute(){return null}, setAttribute(){}
+};
+const $ = id => document.getElementById(id) || NOOP_EL;
+const key = m => `pulmuone-water:${YEAR}-${String(m).padStart(2,'0')}`;
+const pad = n => String(n).padStart(2,'0');
+const now = () => { const d=new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const blank = () => ({status:'none', recvDate:'', issue:'', issueNote:'', pmNote:'',
+                      ackWV:false, ackPM:false, atFac:'', atWV:'', atPM:'', seed:false});
+/* 시트에 수령여부만 있고 수령일자가 없는 기간 — 수령완료로 표시, 날짜는 공란 */
+/* ══════════════════════════════════════════════════════════
+   월별 수령 실적 기준값
+     'all'      → 10개 기관 전부 수령완료
+     [1,2,5]    → 해당 순번 기관만 수령완료, 나머지는 미확인
+     적지 않은 달 → 전부 미확인
+
+   기관 순번
+     1 루시모자원   2 성보재활원   3 성심모자원   4 영락모자원   5 인애빌
+     6 인제요양원   7 평화모자원   8 푸르뫼 Mom&Kids   9 한나빌리지   10 해오름빌
+
+   ★ 이 값은 해당 월을 처음 열 때 한 번만 사용됩니다.
+     이후에는 웹페이지에서 입력한 내용이 자동 저장되어 항상 우선합니다.
+     기준값을 다시 씌우려면 상단의 «이 달 기준값 다시 적용» 버튼을 누르세요.
+   ══════════════════════════════════════════════════════════ */
+const RECORDS = {
+  2:'all', 3:'all', 4:'all', 5:'all', 6:'all', 7:'all', 8:'all',
+  9:[1,2,5,8,9]        // 9월: 루시모자원·성보재활원·인애빌·푸르뫼 Mom&Kids·한나빌리지 수령
+};
+
+/* 기준값은 그 달을 처음 여는 순간 한 번만 채워진다.
+   한 번 저장된 뒤에는 웹페이지에서 입력한 내용이 항상 우선이며,
+   기준값을 다시 씌우고 싶을 때만 상단의 «이 달 기준값 다시 적용» 버튼을 쓴다. */
+function applyDefaults(m, store){
+  const spec = RECORDS[m];
+  if(spec === undefined) return false;
+  FACILITIES.forEach(f => {
+    const got = (spec === 'all') || (Array.isArray(spec) && spec.indexOf(f.no) !== -1);
+    store[f.no].status = got ? 'done' : 'none';
+    store[f.no].seed = true;
+  });
+  return true;
+}
+/* ─────────────────────────────────────────────────────────
+   저장소 설정
+   아래 API_URL 에 Google Apps Script 웹앱 주소를 붙여넣으면
+   시설 · 월드비전 · 풀무원샘물이 같은 데이터를 공유합니다.
+   비워두면 이 브라우저에만 저장되는 임시 모드로 동작합니다.
+   ───────────────────────────────────────────────────────── */
+const API_URL = "https://script.google.com/macros/s/AKfycbxZJanCoZ_nEZmDscHXvFWaUHHKK3kM-cjd75swE66g63DYoOKbGJX0GBHWm6sL3zPJxQ/exec";
+
+const Store = {
+  get mode(){ return API_URL ? 'shared' : 'local'; },
+  async get(k){
+    if(!API_URL){
+      const v = localStorage.getItem(k);
+      return v ? {value:v} : null;
+    }
+    const r = await fetch(`${API_URL}?key=${encodeURIComponent(k)}`, {method:'GET'});
+    if(!r.ok) throw new Error('load failed');
+    const j = await r.json();
+    return j && j.value ? {value:j.value} : null;
+  },
+  async set(k, v){
+    if(!API_URL){ localStorage.setItem(k, v); return true; }
+    const r = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({key:k, value:v})
+    });
+    if(!r.ok) throw new Error('save failed');
+    return true;
+  }
+};
+
+function fmtDay(iso){
+  if(!iso) return '';
+  const p = iso.split('-');
+  if(p.length !== 3) return iso;
+  const d = new Date(+p[0], +p[1]-1, +p[2]);
+  const wd = ['일','월','화','수','목','금','토'][d.getDay()];
+  return `${+p[1]}월 ${+p[2]}일(${wd})`;
+}
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),1900); }
+
+function migrate(d){
+  const b = blank();
+  if(!d) return b;
+  Object.keys(b).forEach(k => { if(d[k]!==undefined) b[k]=d[k]; });
+  if(!b.pmNote && d.comment) b.pmNote = d.comment;
+  if(d.action) b.issueNote = (b.issueNote ? b.issueNote+'\n' : '') + '[기존 조치사항] ' + d.action;
+  if(d.ack) b.ackPM = true;
+  if(!b.atFac && d.at) b.atFac = d.at;
+  return b;
+}
+
+async function loadMonth(){
+  $('metaLine').textContent = '불러오는 중…';
+  data = {};
+  let raw = {}, stored = false;
+  try{
+    const r = await Store.get(key(month));
+    if(r && r.value){
+      const j = JSON.parse(r.value);
+      raw = (j && j.rows) ? j.rows : (j || {});
+      stored = Object.keys(raw).length > 0;
+    }
+  }catch(e){}
+  FACILITIES.forEach(f => { data[f.no] = migrate(raw[f.no]); });
+  const seeded = stored ? false : applyDefaults(month, data);
+  render(); metaText();
+  setSaveState(stored ? 'saved' : '', stored ? '불러옴' : '자동 저장');
+  if(seeded) save(true);          // 최초 1회만 기록을 남긴다
+  startPoll();
+}
+function metaText(){
+  const t = [];
+  Object.values(data).forEach(d => { [d.atFac,d.atWV,d.atPM].forEach(x => x && t.push(x)); });
+  t.sort();
+  const seeded = Object.values(data).some(d => d.seed);
+  $('metaLine').innerHTML = seeded
+    ? `<b>${YEAR}년 ${month}월분</b> · 배송예정 15일경 · <span style="color:var(--ink-faint)">구글 시트 기준 전 기관 수령완료 · 수령일 미기재</span>`
+    : `<b>${YEAR}년 ${month}월분</b> · 배송예정 15일경 · 마지막 기록 ${t.length?t[t.length-1]:'없음'}`;
+}
+function setSaveState(cls, text){
+  const el = $('autosave');
+  el.className = 'autosave' + (cls ? ' '+cls : '');
+  el.textContent = text;
+}
+function payload(){ return JSON.stringify({savedAt: now(), rows: data}); }
+
+async function save(silent, attempt){
+  attempt = attempt || 0;
+  clearTimeout(saveTimer);
+  setSaveState('saving','저장 중…');
+  try{
+    await Store.set(key(month), payload());
+    dirty = false; metaText();
+    if(yearCache) yearCache[month] = data;
+    const d = new Date();
+    setSaveState('saved', `저장됨 ${pad(d.getHours())}:${pad(d.getMinutes())}`);
+  }catch(e){
+    if(attempt < 2){                       // 통신이 끊겼을 때 자동 재시도
+      setSaveState('saving', `저장 재시도 중… (${attempt+1}/2)`);
+      setTimeout(() => save(true, attempt+1), 1500 * (attempt+1));
+      return;
+    }
+    setSaveState('err','저장 실패 · 눌러서 다시 시도');
+    $('autosave').onclick = () => save(true);
+  }
+}
+function queueSave(){
+  dirty = true;
+  setSaveState('saving','입력 중…');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>save(true), 700);
+}
+function touch(no, field){
+  data[no].seed = false;
+  const side = SIDE[field] || 'fac';
+  data[no]['at' + (side==='fac'?'Fac':side==='wv'?'WV':'PM')] = now();
+  queueSave();
+}
+
+function buildMonths(){
+  $('months').innerHTML = MONTHS.map(m =>
+    `<button data-m="${m}" aria-current="${m===month}">${m}월</button>`).join('');
+  $('months').onclick = async e => {
+    const b = e.target.closest('button'); if(!b) return;
+    if(dirty) await save(true);
+    month = +b.dataset.m;
+    [...$('months').children].forEach(x => x.setAttribute('aria-current', x===b));
+    loadMonth();
+    $('pasteMonth').textContent = `${YEAR}년 ${month}월분`;
+    if($('year').classList.contains('on')) drawYear();
+  };
+}
+
+function stampHTML(d){
+  const p = [];
+  if(d.seed && !d.atFac && !d.atWV && !d.atPM) return '구글 시트 기준 수령완료 · 수령일 미기재';
+  if(d.atFac) p.push(`<i>${SIDE_LABEL.fac}</i> ${d.atFac}`);
+  if(d.atWV)  p.push(`<i>${SIDE_LABEL.wv}</i> ${d.atWV}`);
+  if(d.atPM)  p.push(`<i>${SIDE_LABEL.pm}</i> ${d.atPM}`);
+  return p.length ? p.join('<em>|</em>') : '아직 입력 없음';
+}
+
+function render(){
+  $('list').innerHTML = FACILITIES.map(f => {
+    const d = data[f.no];
+    return `
+    <article class="row" data-s="${d.status}" data-no="${f.no}" id="fac-${f.no}">
+
+      <div class="rhead">
+        <div class="rname"><span class="no">${f.no}</span>${f.name}</div>
+        <div class="rqty">신청 ${f.box} BOX · ${f.ea.toLocaleString()}개</div>
+        <div class="rstate">
+          <div class="fieldline">
+            <span>수령여부</span>
+            <div class="segbtns" role="group" aria-label="${f.name} 수령여부">
+              ${['done','part','miss'].map(v =>
+                `<button data-act="status" data-v="${v}" aria-pressed="${d.status===v}">${STATUS_LABEL[v]}</button>`).join('')}
+            </div>
+          </div>
+          <div class="fieldline">
+            <span>수령일</span>
+            <input type="date" class="dateinput" data-act="recvDate" value="${d.recvDate}" aria-label="${f.name} 수령일">
+          </div>
+        </div>
+      </div>
+
+      <div class="rbody">
+        <div class="panel">
+          <div class="panel-h"><b>배송이슈</b><span class="tag tag-fac">시설 담당자 작성</span></div>
+          <div class="f">
+            <label>이슈 유형</label>
+            <select data-act="issue" class="${d.issue?'has-issue':''}">
+              <option value="">이슈 없음</option>
+              ${ISSUES.map(i=>`<option ${d.issue===i?'selected':''}>${i}</option>`).join('')}
+            </select>
+          </div>
+          <div class="f">
+            <label>상세 내용</label>
+            <textarea data-act="issueNote"
+              placeholder="예: 15일 배송분 중 2BOX 외부 포장 젖음, 8BOX만 수령">${d.issueNote}</textarea>
+          </div>
+        </div>
+
+        <div class="panel pm">
+          <div class="panel-h"><b>조치 의견</b><span class="tag tag-pm">풀무원샘물 담당자 회신</span></div>
+          <div class="f">
+            <label>이슈 확인 결과 및 조치 계획</label>
+            <textarea data-act="pmNote" style="min-height:151px"
+              placeholder="예: 파손 2BOX 확인, 20일 재배송 예정 / 물류사에 포장 개선 요청">${d.pmNote}</textarea>
+            <div class="need" data-need>배송이슈 등록됨 · 풀무원샘물 회신 대기</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rfoot">
+        <label class="ack wv ${d.ackWV?'on':''}">
+          <input type="checkbox" data-act="ackWV" ${d.ackWV?'checked':''}> 월드비전 확인
+        </label>
+        <label class="ack pm ${d.ackPM?'on':''}">
+          <input type="checkbox" data-act="ackPM" ${d.ackPM?'checked':''}> 풀무원샘물 확인
+        </label>
+        <div class="stamp">${stampHTML(d)}</div>
+      </div>
+
+    </article>`;
+  }).join('');
+  bindRows(); refresh();
+}
+
+function bindRows(){
+  $('list').querySelectorAll('.row').forEach(row => {
+    const no = row.dataset.no;
+    row.addEventListener('click', e => {
+      const b = e.target.closest('button[data-act="status"]'); if(!b) return;
+      data[no].status = (data[no].status === b.dataset.v) ? 'none' : b.dataset.v;
+      row.dataset.s = data[no].status;
+      row.querySelectorAll('button[data-act="status"]').forEach(x =>
+        x.setAttribute('aria-pressed', data[no].status === x.dataset.v));
+      touch(no,'status'); afterEdit(row,no);
+    });
+    row.addEventListener('change', e => {
+      const el = e.target.closest('[data-act]'); if(!el || el.tagName==='BUTTON') return;
+      const k = el.dataset.act;
+      if(k==='ackWV' || k==='ackPM'){
+        data[no][k] = el.checked;
+        el.closest('.ack').classList.toggle('on', el.checked);
+      } else data[no][k] = el.value;
+      if(k==='issue') el.classList.toggle('has-issue', !!el.value);
+      touch(no,k); afterEdit(row,no);
+    });
+    row.addEventListener('input', e => {
+      const el = e.target.closest('textarea[data-act]'); if(!el) return;
+      data[no][el.dataset.act] = el.value;
+      touch(no, el.dataset.act);
+      needFlag(row, data[no]);
+    });
+    needFlag(row, data[no]);
+  });
+}
+function needFlag(row, d){
+  const n = row.querySelector('[data-need]');
+  if(n) n.classList.toggle('on', !!(d.issue || d.status==='miss' || d.status==='part') && !d.pmNote.trim());
+}
+function afterEdit(row,no){
+  row.querySelector('.stamp').innerHTML = stampHTML(data[no]);
+  needFlag(row, data[no]);
+  refresh();
+}
+
+function refresh(){
+  let done=0, issue=0, wait=0, both=0;
+  $('chips').innerHTML = FACILITIES.map(f => {
+    const d = data[f.no];
+    const hasIssue = !!d.issue || d.status==='miss' || d.status==='part';
+    if(hasIssue) issue++;
+    if(d.status==='done') done++;
+    if(d.status==='none') wait++;
+    if(d.ackWV && d.ackPM) both++;
+    const note = d.issue ? ` <span class="chip-flag">· ${d.issue}</span>` : '';
+    const waitPM = hasIssue && !d.pmNote.trim() ? `<span class="chip-wait">풀무원 회신 대기</span>` : '';
+    const day = (d.status==='done' || d.status==='part') && d.recvDate
+      ? `<span class="chip-day">${fmtDay(d.recvDate)} 수령</span>`
+      : ((d.status==='done' || d.status==='part') ? `<span class="chip-nodate">수령일 미기재</span>` : '');
+    return `<button class="chip" data-s="${d.status}" data-no="${f.no}">
+      <span class="chip-no">${f.no}</span><span class="chip-name">${f.name}</span>
+      <span class="chip-state">${STATUS_LABEL[d.status]}${note}</span>${day}${waitPM}
+      <span class="chip-acks">
+        <i class="ackdot wv ${d.ackWV?'on':''}">${d.ackWV?'✓ ':''}월드비전</i>
+        <i class="ackdot pm ${d.ackPM?'on':''}">${d.ackPM?'✓ ':''}풀무원</i>
+      </span></button>`;
+  }).join('');
+  $('chips').onclick = e => {
+    const b = e.target.closest('.chip'); if(!b) return;
+    const el = $('fac-'+b.dataset.no);
+    if(el){ el.classList.remove('hide'); el.scrollIntoView({behavior:'smooth',block:'center'});
+      el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),1200); }
+  };
+  $('cDone').textContent = done; $('cIssue').textContent = issue;
+  $('cWait').textContent = wait; $('cAck').textContent = both;
+  applyFilter();
+}
+function applyFilter(){
+  const on = $('onlyIssue').checked; let shown = 0;
+  $('list').querySelectorAll('.row').forEach(row => {
+    const d = data[row.dataset.no];
+    const keep = !on || d.status!=='done' || !!d.issue;
+    row.classList.toggle('hide', !keep); if(keep) shown++;
+  });
+  const old = $('list').querySelector('.empty'); if(old) old.remove();
+  if(shown===0){
+    const e = document.createElement('div');
+    e.className='empty'; e.textContent='이슈나 미확인 건이 없습니다. 이번 달 배송은 모두 정상 수령되었습니다.';
+    $('list').appendChild(e);
+  }
+}
+
+$('btnYear').onclick = async () => {
+  const box = $('year'), open = box.classList.toggle('on');
+  $('btnYear').textContent = open ? '연간 현황 닫기' : '연간 현황 보기';
+  if(!open) return;
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+  if(!yearCache){
+    $('yearNote').textContent = '월별 기록을 불러오는 중…';
+    yearCache = {};
+    for(const m of MONTHS){
+      if(m === month){ yearCache[m] = data; continue; }
+      try{ const r = await Store.get(key(m));
+           let raw = {}, stored = false;
+           if(r && r.value){ const j = JSON.parse(r.value);
+             raw = (j && j.rows) ? j.rows : (j || {}); stored = Object.keys(raw).length > 0; }
+           const o = {}; FACILITIES.forEach(f => o[f.no] = migrate(raw[f.no]));
+           if(!stored) applyDefaults(m, o);
+           yearCache[m] = o; }
+      catch(e){ const o={}; FACILITIES.forEach(f=>o[f.no]=blank()); applyDefaults(m,o); yearCache[m]=o; }
+    }
+  }
+  drawYear();
+};
+function drawYear(){
+  if(!yearCache) return;
+  yearCache[month] = data;
+  let filled = 0;
+  const head = `<thead><tr><th>기관명</th>${MONTHS.map(m=>`<th>${m}월</th>`).join('')}<th>수령</th></tr></thead>`;
+  const body = FACILITIES.map(f => {
+    let cnt = 0;
+    const tds = MONTHS.map(m => {
+      const d = (yearCache[m]||{})[f.no] || {};
+      const s = d.status || 'none';
+      if(s==='done') cnt++;
+      if(s!=='none') filled++;
+      const t = `${m}월 ${f.name} · ${STATUS_LABEL[s]}${d.recvDate?' · '+fmtDay(d.recvDate)+' 수령':''}${d.issue?' · '+d.issue:''}`;
+      return `<td class="${m===month?'cur':''}"><i class="dot ${d.issue?'iss':''}" ${s!=='none'?`data-s="${s}"`:''} title="${t}"></i></td>`;
+    }).join('');
+    return `<tr><td>${f.no}. ${f.name}</td>${tds}<td><b>${cnt}</b>/${MONTHS.length}</td></tr>`;
+  }).join('');
+  $('ytable').innerHTML = head + `<tbody>${body}</tbody>`;
+  $('yearNote').textContent = filled
+    ? `${YEAR}년 2월~12월 정기배송 · 기록된 건 ${filled}건 · 점 위에 커서를 올리면 상세가 보입니다.`
+    : '아직 기록된 월이 없습니다. 월 탭에서 수령여부를 입력하면 이 표에 쌓입니다.';
+}
+
+function csv(){
+  const head = ['순번','기관명','신청BOX','신청낱개','수령여부','수령일','배송이슈유형','이슈내용(시설)','조치의견(풀무원샘물)','월드비전확인','풀무원확인','시설입력일시','월드비전확인일시','풀무원회신일시'];
+  const rows = FACILITIES.map(f => { const d = data[f.no];
+    return [f.no,f.name,f.box,f.ea,STATUS_LABEL[d.status],d.recvDate||'미기재',d.issue||'이슈 없음',
+            d.issueNote,d.pmNote,d.ackWV?'확인':'',d.ackPM?'확인':'',d.atFac,d.atWV,d.atPM]; });
+  const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
+  const body = [ [`${YEAR}년 ${month}월 풀무원샘물 생수 정기배송 수령 확인`], head, ...rows ]
+    .map(r => r.map(esc).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF'+body], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `풀무원샘물_정기배송_수령확인_${YEAR}년${month}월.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('CSV 파일을 내려받았습니다');
+}
+
+/* ── 시트 붙여넣기 ── */
+function normName(v){ return String(v||'').replace(/[\s\u00a0]/g,'').toLowerCase(); }
+function matchFacility(cells){
+  for(const c of cells){
+    const n = normName(c);
+    if(!n) continue;
+    const hit = FACILITIES.find(f => { const fn = normName(f.name); return n===fn || n.includes(fn) || fn.includes(n) && n.length>=3; });
+    if(hit) return hit;
+  }
+  return null;
+}
+function parseStatus(c){
+  const v = String(c||'').trim();
+  if(!v) return null;
+  if(/^(o|ㅇ|○|◯|●|v|✓|완료|수령|수령완료|정상)$/i.test(v) || /수령\s*완료/.test(v)) return 'done';
+  if(/^(△|▲|부분|일부)$/.test(v) || /부분\s*수령|일부\s*수령/.test(v)) return 'part';
+  if(/^(x|✕|×|χ|미수령|미배송)$/i.test(v) || /미\s*수령|미\s*배송/.test(v)) return 'miss';
+  return null;
+}
+function parseDate(text, m){
+  const t = String(text||'');
+  let mm = t.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/);
+  if(mm) return `${mm[1]}-${pad(+mm[2])}-${pad(+mm[3])}`;
+  mm = t.match(/(\d{1,2})\s*[월.\-\/]\s*(\d{1,2})\s*일?/);
+  if(mm && +mm[1]>=1 && +mm[1]<=12 && +mm[2]>=1 && +mm[2]<=31) return `${YEAR}-${pad(+mm[1])}-${pad(+mm[2])}`;
+  mm = t.match(/(\d{1,2})\s*일/);
+  if(mm && +mm[1]>=1 && +mm[1]<=31) return `${YEAR}-${pad(m)}-${pad(+mm[1])}`;
+  return '';
+}
+function guessIssueType(text){
+  const t = String(text||'');
+  if(!t.trim()) return '';
+  if(/지연|늦|연기/.test(t)) return '배송 지연';
+  if(/부족|누락|모자/.test(t)) return '수량 부족';
+  if(/파손|누수|젖|찢|훼손/.test(t)) return '제품 파손·누수';
+  if(/오배송|잘못|타\s*시설/.test(t)) return '오배송(타 시설)';
+  if(/부재|반송|못\s*받/.test(t)) return '부재로 미수령';
+  if(/주소|연락처|변경|이전/.test(t)) return '배송지·연락처 변경';
+  if(/요청|문의/.test(t)) return '수령처 요청사항';
+  return '기타';
+}
+function applyPaste(){
+  const txt = $('pasteBox').value;
+  if(!txt.trim()){ toast('붙여넣은 내용이 없습니다'); return; }
+  let hit = 0, issues = 0;
+  txt.split(/\r?\n/).forEach(line => {
+    if(!line.trim()) return;
+    let cells = line.includes('\t') ? line.split('\t') : line.split(/\s{2,}|,(?=\S)/);
+    cells = cells.map(c => c.trim());
+    const f = matchFacility(cells);
+    if(!f) return;
+    const d = data[f.no];
+    const rest = cells.filter(c => !normName(c) || normName(c) !== normName(f.name));
+    let st = null, note = [];
+    rest.forEach(c => {
+      if(!c) return;
+      if(/^\d{1,4}$/.test(c)) return;                    // 순번·수량
+      const p = parseStatus(c);
+      if(p && !st){ st = p; return; }
+      note.push(c);
+    });
+    if(st){ d.status = st; d.atFac = now(); }
+    const joined = note.join(' ').trim();
+    const dt = parseDate(joined, month) || (st==='done' ? '' : '');
+    if(dt) d.recvDate = dt;
+    if(joined){
+      d.issueNote = joined;
+      d.issue = guessIssueType(joined);
+      d.atFac = now();
+      issues++;
+    }
+    hit++;
+  });
+  if(!hit){ $('pasteInfo').textContent = '기관명을 찾지 못했습니다. 기관명이 포함된 행을 붙여넣어 주세요.'; return; }
+  render(); save(true);
+  $('pasteInfo').textContent = `${hit}개 기관 반영 · 이슈 ${issues}건`;
+  $('pasteBox').value = '';
+  toast(`${month}월분 ${hit}개 기관을 반영했습니다`);
+}
+$('btnReset').onclick = () => {
+  if(!confirm(`${YEAR}년 ${month}월의 수령여부를 코드에 적힌 기준값으로 되돌립니다.\n입력하신 이슈 내용과 풀무원 회신은 그대로 유지됩니다.`)) return;
+  if(!applyDefaults(month, data)){ toast(`${month}월은 기준값이 지정되어 있지 않습니다`); return; }
+  render(); save(true); toast(`${month}월 수령여부를 기준값으로 되돌렸습니다`);
+};
+$('btnPaste').onclick = () => {
+  const on = $('paste').classList.toggle('on');
+  $('pasteMonth').textContent = `${YEAR}년 ${month}월분`;
+  $('pasteInfo').textContent = '';
+  if(on) $('paste').scrollIntoView({behavior:'smooth',block:'nearest'});
+};
+$('btnPasteCancel').onclick = () => $('paste').classList.remove('on');
+$('btnPasteApply').onclick = applyPaste;
+
+$('onlyIssue').onchange = applyFilter;
+$('btnCsv').onclick = csv;
+$('btnPrint').onclick = () => window.print();
+document.addEventListener('focusout', e => {
+  if(dirty && e.target.closest('textarea[data-act], select[data-act], input[data-act]')) save(true);
+});
+/* 창을 닫거나 탭을 벗어날 때 — 남은 입력을 확실히 보낸다 */
+window.addEventListener('pagehide', () => {
+  if(!dirty) return;
+  if(API_URL && navigator.sendBeacon){
+    const body = JSON.stringify({key:key(month), value:payload()});
+    navigator.sendBeacon(API_URL, new Blob([body], {type:'text/plain;charset=utf-8'}));
+    dirty = false;
+  } else save(true);
+});
+document.addEventListener('visibilitychange', () => { if(document.hidden && dirty) save(true); });
+
+/* 다른 담당자가 입력한 내용을 45초마다 자동으로 가져온다 */
+let pollTimer = null;
+function startPoll(){
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    if(dirty || document.hidden) return;
+    if(document.activeElement && document.activeElement.closest('[data-act]')) return;
+    if($('paste').classList.contains('on')) return;
+    try{
+      const r = await Store.get(key(month));
+      if(!r || !r.value) return;
+      const j = JSON.parse(r.value);
+      const rows = (j && j.rows) ? j.rows : j;
+      const fresh = {};
+      FACILITIES.forEach(f => fresh[f.no] = migrate(rows[f.no]));
+      if(JSON.stringify(fresh) === JSON.stringify(data)) return;
+      data = fresh;
+      const y = window.scrollY; render(); window.scrollTo(0, y);
+      metaText();
+      const d = new Date();
+      setSaveState('saved', `최신 반영 ${pad(d.getHours())}:${pad(d.getMinutes())}`);
+    }catch(e){}
+  }, 45000);
+}
+
+if(Store.mode === 'local') $('localnote').classList.add('on');
+function showFatal(err){
+  const box = document.createElement('div');
+  box.style.cssText = 'margin:18px 0;padding:14px 16px;border-radius:6px;background:#FCF2F2;'
+    + 'border:1px solid #E8B4B4;color:#8A1F1F;font-size:13px;line-height:1.7';
+  box.innerHTML = '<b>페이지를 불러오지 못했습니다.</b><br>'
+    + 'index.html 이 완전히 업로드되지 않았을 수 있습니다. 파일 전체를 다시 올린 뒤 Ctrl+F5 로 새로고침해 주세요.'
+    + '<br><span style="color:#B06060">기술 정보: ' + String(err && err.message || err) + '</span>';
+  const wrap = document.querySelector('.wrap');
+  if(wrap) wrap.prepend(box); else document.body.prepend(box);
+}
+
+try{
+  buildMonths();
+  loadMonth();
+}catch(err){
+  console.error(err);
+  showFatal(err);
+}
+</script>
