@@ -86,6 +86,11 @@
   .btn{background:#fff;border:1px solid var(--line);color:var(--ink);font:inherit;font-size:12.5px;
     padding:7px 13px;border-radius:5px;cursor:pointer;white-space:nowrap}
   .btn:hover{border-color:var(--spring);color:var(--spring)}
+  .btn-wv{border-color:#F2C2AE;color:var(--wv-ink);background:#FFF7F4}
+  .btn-wv:hover{background:var(--wv);border-color:var(--wv);color:#fff}
+  .btn-pm{border-color:var(--spring-line);color:var(--spring-deep);background:var(--spring-wash)}
+  .btn-pm:hover{background:var(--spring);border-color:var(--spring);color:#fff}
+  .btn-bulk{min-width:138px;font-weight:600}
   .localnote{display:none;margin-top:18px;padding:11px 15px;border-radius:6px;
     background:#FFF6E8;border:1px solid #F0D9AE;color:#8A5A12;font-size:12.5px;line-height:1.6}
   .localnote.on{display:block}
@@ -243,6 +248,8 @@
       <div class="meta" id="metaLine">불러오는 중…</div>
       <div class="tools">
         <label class="chk"><input type="checkbox" id="onlyIssue"> 이슈·미확인만 보기</label>
+        <button class="btn btn-wv btn-bulk" id="btnAckWV">월드비전 일괄확인</button>
+        <button class="btn btn-pm btn-bulk" id="btnAckPM">풀무원샘물 일괄확인</button>
         <button class="btn" id="btnYear">연간 현황 보기</button>
         <button class="btn" id="btnCsv">엑셀(CSV)로 내려받기</button>
         <button class="btn" id="btnPrint">인쇄</button>
@@ -267,7 +274,7 @@
   <div class="roles">
     <div class="role">
       <b>시설 담당자</b>
-      <p>생수 수령 여부 · 수령일 체크, 배송 이슈 발생 시 등록해주세요.</p>
+      <p>생수 수령 여부 · 수령일 체크, 배송 이슈가 있으면 등록해주세요.</p>
     </div>
     <div class="role wv">
       <b>월드비전 담당자</b>
@@ -663,6 +670,7 @@ function refresh(){
   };
   $('cDone').textContent = done; $('cIssue').textContent = issue;
   $('cWait').textContent = wait; $('cAck').textContent = both;
+  syncBulkLabels();
   applyFilter();
 }
 function applyFilter(){
@@ -740,6 +748,46 @@ function csv(){
   a.click(); URL.revokeObjectURL(a.href);
   toast('CSV 파일을 내려받았습니다');
 }
+
+/* ── 월드비전 · 풀무원샘물 일괄 확인 ──
+   전부 체크되어 있으면 «확인해제», 아니면 «일괄확인» 으로 동작한다. */
+const BULK = [
+  {side:'wv', field:'ackWV', btn:'btnAckWV', at:'atWV', label:'월드비전'},
+  {side:'pm', field:'ackPM', btn:'btnAckPM', at:'atPM', label:'풀무원샘물'}
+];
+function syncBulkLabels(){
+  BULK.forEach(b => {
+    const all = FACILITIES.every(f => data[f.no] && data[f.no][b.field]);
+    const el = $(b.btn);
+    el.textContent = all ? `${b.label} 확인해제` : `${b.label} 일괄확인`;
+    el.title = all
+      ? `${FACILITIES.length}개 기관의 «${b.label} 확인» 을 모두 해제합니다`
+      : `${FACILITIES.length}개 기관을 한 번에 «${b.label} 확인» 처리합니다`;
+  });
+}
+function bulkAck(side){
+  const b = BULK.find(x => x.side === side);
+  const to = !FACILITIES.every(f => data[f.no][b.field]);
+  const n = FACILITIES.filter(f => data[f.no][b.field] !== to).length;
+  if(!n){ toast('바뀔 항목이 없습니다'); return; }
+  const msg = to
+    ? `${YEAR}년 ${month}월 ${FACILITIES.length}개 기관 전체를\n«${b.label} 확인» 으로 표시합니다. (${n}개 기관 변경)`
+    : `${YEAR}년 ${month}월 ${FACILITIES.length}개 기관의\n«${b.label} 확인» 을 모두 해제합니다. (${n}개 기관 변경)`;
+  if(!confirm(msg)) return;
+  const stamp = now();
+  FACILITIES.forEach(f => {
+    const d = data[f.no];
+    if(d[b.field] === to) return;
+    d[b.field] = to;
+    d.seed = false;
+    d[b.at] = stamp;
+  });
+  render(); save(true);
+  toast(to ? `${n}개 기관을 ${b.label} 확인 처리했습니다`
+           : `${n}개 기관의 ${b.label} 확인을 해제했습니다`);
+}
+$('btnAckWV').onclick = () => bulkAck('wv');
+$('btnAckPM').onclick = () => bulkAck('pm');
 
 $('onlyIssue').onchange = applyFilter;
 $('btnCsv').onclick = csv;
