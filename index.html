@@ -124,10 +124,11 @@
 
   .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:20px 0 6px}
   .role{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--fac);
-    border-radius:5px;padding:12px 14px}
+    border-radius:5px;padding:12px 14px;display:flex;flex-direction:column}
   .role.wv{border-top-color:var(--wv)} .role.pm{border-top-color:var(--pm-bright)}
   .role b{display:block;font-size:13px;font-weight:700;letter-spacing:-.02em;margin-bottom:2px}
-  .role p{margin:0;font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+  .role p{margin:0;font-size:12.5px;color:var(--ink-soft);line-height:1.5;flex:1}
+  .role .btn-bulk{width:100%;margin-top:11px;padding:8px 10px}
 
   /* ── 시설 행 ── */
   .list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
@@ -248,8 +249,6 @@
       <div class="meta" id="metaLine">불러오는 중…</div>
       <div class="tools">
         <label class="chk"><input type="checkbox" id="onlyIssue"> 이슈·미확인만 보기</label>
-        <button class="btn btn-wv btn-bulk" id="btnAckWV">월드비전 일괄확인</button>
-        <button class="btn btn-pm btn-bulk" id="btnAckPM">풀무원샘물 일괄확인</button>
         <button class="btn" id="btnYear">연간 현황 보기</button>
         <button class="btn" id="btnCsv">엑셀(CSV)로 내려받기</button>
         <button class="btn" id="btnPrint">인쇄</button>
@@ -279,10 +278,12 @@
     <div class="role wv">
       <b>월드비전 담당자</b>
       <p>시설별 수령 여부 · 배송이슈 확인</p>
+      <button class="btn btn-wv btn-bulk" id="btnAckWV">월드비전 일괄확인</button>
     </div>
     <div class="role pm">
       <b>풀무원샘물 담당자</b>
       <p>배송이슈 확인 · 조치 의견 회신</p>
+      <button class="btn btn-pm btn-bulk" id="btnAckPM">풀무원샘물 일괄확인</button>
     </div>
   </div>
 
