@@ -748,8 +748,7 @@ function refresh(){
     if(d.status==='done') done++;
     if(d.status==='none') wait++;
     if(d.ackWV && d.ackPM) both++;
-    const sl = stepsOf(d).map(x => x.label).join(' › ');
-    opts += `<option value="${f.no}" ${selNo===f.no?'selected':''}>${f.no}. ${f.name}  —  ${sl}${d.issue?' ⚠ '+d.issue:''}</option>`;
+    opts += `<option value="${f.no}" ${selNo===f.no?'selected':''}>${f.no}. ${f.name}</option>`;
   });
   $('facSelect').innerHTML = opts;
   $('facSelect').value = selNo || '';
