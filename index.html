@@ -54,7 +54,13 @@
   .c-done b{color:var(--ok)} .c-issue b{color:var(--bad)} .c-wait b{color:var(--ink-faint)}
   .c-ack b{color:var(--spring)} .c-ship b{color:var(--wv)} .c-res b{color:var(--fac)}
 
-  .chips{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:15px 20px 18px}
+  .chips{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 10px;padding:12px 20px 14px}
+  .chip{display:flex;align-items:center;gap:10px;padding:7px 12px}
+  .chip .chip-name{min-width:150px}
+  .chip .mini{margin:0;padding:0;border:0;gap:8px}
+  .chip .chip-state{margin:0 0 0 auto;font-size:12px;white-space:nowrap}
+  .chip .chip-acks{margin:0;padding:0;border:0;flex:0 0 auto}
+  .chip .ackdot{flex:0 0 auto;padding:2px 7px}
   .chip{text-align:left;font:inherit;cursor:pointer;background:#F7FAFB;border:1px solid var(--line);
     border-left:4px solid var(--idle);border-radius:5px;padding:10px 12px;transition:border-color .12s,background .12s}
   .chip:hover{background:#fff;border-color:var(--spring);border-left-color:var(--spring)}
@@ -229,7 +235,7 @@
     background:var(--ink);color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;transition:.2s;z-index:9}
   .toast.on{opacity:1;transform:translate(-50%,0)}
 
-  @media (max-width:1080px){ .chips{grid-template-columns:repeat(3,1fr)} .roles{grid-template-columns:1fr} }
+  @media (max-width:1080px){ .roles{grid-template-columns:1fr} }
   @media (max-width:860px){
     .rbody{grid-template-columns:1fr}
     .steps{margin-left:0;width:100%}
@@ -237,7 +243,8 @@
     .segbtns button{flex:1}
     .stamp{margin-left:0;text-align:left;width:100%}
     h1{font-size:23px}
-    .chips{grid-template-columns:repeat(2,1fr)}
+    .chips{grid-template-columns:1fr}
+    .chip{flex-wrap:wrap}
     .ytable{font-size:11.5px}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -785,14 +792,10 @@ function refresh(){
     if(d.status==='none') wait++;
     if(d.ackWV && d.ackPM) both++;
     const note = d.issue ? ` <span class="chip-flag">· ${d.issue}</span>` : '';
-    const waitPM = hasIssue && !d.pmNote.trim() ? `<span class="chip-wait">풀무원 회신 대기</span>` : '';
-    const day = (d.status==='done' || d.status==='part') && d.recvDate
-      ? `<span class="chip-day">${fmtDay(d.recvDate)} 수령</span>`
-      : ((d.status==='done' || d.status==='part') ? `<span class="chip-nodate">수령일 미기재</span>` : '');
     return `<button class="chip" data-s="${d.status}" data-no="${f.no}">
-      <span class="chip-no">${f.no}</span><span class="chip-name">${f.name}</span>
-      <span class="chip-state">${STATUS_LABEL[d.status]}${note}</span>${day}${waitPM}
+      <span class="chip-name"><span class="chip-no">${f.no}</span>${f.name}</span>
       <span class="mini" title="① 배송 시작 → ② 수령/이슈 → ③ 풀무원 조치 → ④ 문제 해결">${miniHTML(d)}</span>
+      <span class="chip-state">${STATUS_LABEL[d.status]}${note}</span>
       <span class="chip-acks">
         <i class="ackdot wv ${d.ackWV?'on':''}">${d.ackWV?'✓ ':''}월드비전</i>
         <i class="ackdot pm ${d.ackPM?'on':''}">${d.ackPM?'✓ ':''}풀무원</i>
