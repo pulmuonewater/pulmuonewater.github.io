@@ -54,34 +54,7 @@
   .c-done b{color:var(--ok)} .c-issue b{color:var(--bad)} .c-wait b{color:var(--ink-faint)}
   .c-ack b{color:var(--spring)} .c-ship b{color:var(--wv)} .c-res b{color:var(--fac)}
 
-  .chips{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 10px;padding:12px 20px 14px}
-  .chip{display:flex;align-items:center;gap:10px;padding:7px 12px}
-  .chip .chip-name{min-width:150px}
-  .chip .mini{margin:0;padding:0;border:0;gap:8px}
-  .chip .chip-state{margin:0 0 0 auto;font-size:12px;white-space:nowrap}
-  .chip .chip-acks{margin:0;padding:0;border:0;flex:0 0 auto}
-  .chip .ackdot{flex:0 0 auto;padding:2px 7px}
-  .chip{text-align:left;font:inherit;cursor:pointer;background:#F7FAFB;border:1px solid var(--line);
-    border-left:4px solid var(--idle);border-radius:5px;padding:10px 12px;transition:border-color .12s,background .12s}
-  .chip:hover{background:#fff;border-color:var(--spring);border-left-color:var(--spring)}
-  .chip[data-s="done"]{border-left-color:var(--ok);background:#F0F8F5}
-  .chip[data-s="part"]{border-left-color:var(--warn);background:#FDF7EF}
-  .chip[data-s="miss"]{border-left-color:var(--bad);background:#FCF2F2}
-  .chip-no{color:var(--ink-faint);font-size:11.5px;font-weight:700;margin-right:6px}
-  .chip-name{font-weight:700;font-size:13.5px;letter-spacing:-.02em}
-  .chip-state{display:block;margin-top:3px;font-size:11.5px;color:var(--ink-soft)}
-  .chip[data-s="done"] .chip-state{color:var(--ok)}
-  .chip[data-s="part"] .chip-state{color:var(--warn)}
-  .chip[data-s="miss"] .chip-state{color:var(--bad)}
-  .chip-flag{color:var(--bad);font-weight:700}
-  .chip-day{display:block;margin-top:3px;font-size:11.5px;color:var(--ink);font-weight:700;letter-spacing:-.01em}
-  .chip-nodate{display:block;margin-top:3px;font-size:11.5px;color:var(--ink-faint);font-weight:600}
-  .chip-wait{display:block;margin-top:3px;font-size:11px;color:var(--wv-ink);font-weight:700}
-  .chip-acks{display:flex;gap:4px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(0,0,0,.07)}
-  .ackdot{flex:1;text-align:center;font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:-.02em;
-    padding:3px 2px;border-radius:3px;background:#fff;border:1px solid var(--line);color:var(--ink-faint)}
-  .ackdot.on.wv{background:var(--wv);border-color:var(--wv);color:#fff}
-  .ackdot.on.pm{background:var(--spring);border-color:var(--spring);color:#fff}
+
 
   .board-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
     padding:12px 20px;border-top:1px solid var(--line-soft);background:#F7FAFB;border-radius:0 0 var(--r) var(--r)}
@@ -148,17 +121,13 @@
 
   .rhead{display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px;
     padding:13px 20px;border-bottom:1px solid var(--line-soft);background:#FBFDFD}
-  .rhead{cursor:pointer;user-select:none}
-  .rhead:hover{background:#F4F9F6}
-  .rhead:focus-visible{outline:2px solid var(--spring);outline-offset:-2px}
-  .chev{width:9px;height:9px;border-right:2px solid var(--ink-faint);border-bottom:2px solid var(--ink-faint);
-    transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s;flex:0 0 auto;margin-left:4px}
-  .row.open .chev{transform:rotate(-135deg) translate(-2px,-2px)}
-  .row.open .rhead{background:#F4F9F6;border-bottom-color:var(--line)}
-  .rdetail{display:none}
-  .list.allopen .rdetail{display:block}
-  .list.allopen .chev{transform:rotate(-135deg) translate(-2px,-2px)}
-  .row.open .rdetail{display:block}
+  .picker{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:14px 20px 16px}
+  .picker label{font-weight:700;font-size:13px}
+  .picker select{width:auto;min-width:280px;max-width:100%;font-size:14px;font-weight:600;padding:10px 12px;border-color:var(--spring)}
+  .picker-sum{font-size:12.5px;color:var(--ink-soft)}
+  .list .row{display:none}
+  .list.all .row:not(.hide){display:block}
+  .list:not(.all) .row.sel{display:block}
   .steps{display:flex;gap:4px 14px;flex-wrap:wrap;margin-left:auto}
   .step{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--ink-faint);white-space:nowrap}
   .step i{width:19px;height:19px;border-radius:50%;display:inline-grid;place-items:center;font-style:normal;
@@ -170,13 +139,6 @@
   .pn{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;background:var(--ink);
     color:#fff;font-size:11px;font-weight:700;margin-right:7px}
   .panel.wvp{background:var(--wv-wash);border-color:#F6CDBB}
-  .mini{display:flex;gap:9px;margin-top:8px;padding-top:7px;border-top:1px solid rgba(0,0,0,.07)}
-  .mini i{font-style:normal;font-size:10.5px;font-weight:700;color:var(--ink-faint);display:flex;align-items:center;gap:3px}
-  .mini i::before{content:"";width:8px;height:8px;border-radius:50%;background:#D5DEE2}
-  .mini i[data-st="done"]{color:var(--ok)} .mini i[data-st="done"]::before{background:var(--ok)}
-  .mini i[data-st="flag"]{color:var(--bad)} .mini i[data-st="flag"]::before{background:var(--bad)}
-  .mini i[data-st="warn"]{color:var(--warn)} .mini i[data-st="warn"]::before{background:var(--warn)}
-  .mini i[data-st="na"]::before{background:#fff;border:1px dashed var(--ink-faint)}
   .okline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .okline .ack{font-size:13px}
   .shipall{display:flex;gap:6px;margin-top:11px}
@@ -243,8 +205,7 @@
     .segbtns button{flex:1}
     .stamp{margin-left:0;text-align:left;width:100%}
     h1{font-size:23px}
-    .chips{grid-template-columns:1fr}
-    .chip{flex-wrap:wrap}
+    .picker select{min-width:0;width:100%}
     .ytable{font-size:11.5px}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -252,8 +213,7 @@
     header{background:#fff;color:#000}
     .months,.tools,.toast{display:none}
     .row{break-inside:avoid;border:1px solid #ccc}
-    .rdetail{display:block!important}
-    .chev{display:none}
+    .list .row:not(.hide){display:block!important}
     body{background:#fff}
   }
 </style>
@@ -281,7 +241,7 @@
 
   <section class="board">
     <div class="board-head">
-      <div class="board-title">기관별 진행 현황<span>① 배송 시작 → ② 시설 수령/이슈 → ③ 풀무원 확인·조치 → ④ 시설 문제 해결 · 기관을 누르면 해당 기록이 열립니다</span></div>
+      <div class="board-title">기관별 진행 현황<span>① 배송 시작 → ② 시설 수령/이슈 → ③ 풀무원 확인·조치 → ④ 시설 문제 해결 · 기관을 선택하면 해당 기록이 아래에 열립니다</span></div>
       <div class="counts">
         <div class="c-ship"><b id="cShip">0</b><span>배송시작</span></div>
         <div class="c-done"><b id="cDone">0</b><span>수령완료</span></div>
@@ -291,12 +251,16 @@
         <div class="c-res"><b id="cRes">0</b><span>이슈 해결</span></div>
       </div>
     </div>
-    <div class="chips" id="chips"></div>
+    <div class="picker">
+      <label for="facSelect">기관 선택</label>
+      <select id="facSelect" aria-label="기관 선택"></select>
+      <span class="picker-sum" id="pickSum"></span>
+    </div>
     <div class="board-bar">
       <div class="meta" id="metaLine">불러오는 중…</div>
       <div class="tools">
         <label class="chk"><input type="checkbox" id="onlyIssue"> 이슈·미확인만 보기</label>
-        <button class="btn" id="btnToggleAll">전체 펼치기</button>
+        <button class="btn" id="btnToggleAll">전체 기관 보기</button>
         <button class="btn" id="btnYear">연간 현황 보기</button>
         <button class="btn" id="btnCsv">엑셀(CSV)로 내려받기</button>
         <button class="btn" id="btnPrint">인쇄</button>
@@ -340,6 +304,7 @@
   </div>
 
   <div class="list" id="list"></div>
+  <div class="empty" id="pickHint">위에서 <b>기관을 선택</b>하면 상세 기록이 이곳에 펼쳐집니다.</div>
 
   <footer>
     이 페이지의 입력값은 시설·월드비전·풀무원샘물이 함께 보는 공용 기록으로 저장됩니다. 개인정보나 대외비는 입력하지 마세요.<br>
@@ -377,7 +342,7 @@ if(!MONTHS.includes(month)) month = 6;
 let data = {};
 let dirty = false, saveTimer = null;
 let yearCache = null;
-let openNo = null;                 // 펼쳐진 기관(한 번에 하나)
+let selNo = null;                  // 드롭다운에서 선택한 기관
 
 /* 화면 요소가 없어도 스크립트 전체가 멈추지 않도록 빈 껍데기를 돌려준다 */
 const NOOP_EL = {
@@ -609,20 +574,17 @@ function stepsOf(d){
 }
 const stepsHTML = d => stepsOf(d).map((s,i) =>
   `<span class="step" data-st="${s.st}"><i>${s.st==='done'?'✓':i+1}</i>${s.label}</span>`).join('');
-const miniHTML = d => stepsOf(d).map((s,i) => `<i data-st="${s.st}">${i+1}</i>`).join('');
 
 function render(){
-  if(openNo !== null && !FACILITIES.some(f => f.no === openNo)) openNo = null;
   $('list').innerHTML = FACILITIES.map(f => {
     const d = data[f.no];
     return `
-    <article class="row ${openNo===f.no?'open':''}" data-s="${d.status}" data-no="${f.no}" id="fac-${f.no}">
+    <article class="row ${selNo===f.no?'sel':''}" data-s="${d.status}" data-no="${f.no}" id="fac-${f.no}">
 
-      <div class="rhead" data-toggle role="button" tabindex="0" aria-expanded="${openNo===f.no}">
+      <div class="rhead">
         <div class="rname"><span class="no">${f.no}</span>${f.name}</div>
         <div class="rqty">신청 ${f.box} BOX · ${f.ea.toLocaleString()}개</div>
         <div class="steps" data-steps>${stepsHTML(d)}</div>
-        <span class="chev" aria-hidden="true"></span>
       </div>
 
       <div class="rdetail">
@@ -715,27 +677,21 @@ function render(){
   bindRows(); refresh();
 }
 
-function setOpen(no){
-  openNo = (openNo === no) ? null : no;
-  $('list').querySelectorAll('.row').forEach(r => {
-    const on = +r.dataset.no === openNo;
-    r.classList.toggle('open', on);
-    const h = r.querySelector('.rhead'); if(h) h.setAttribute('aria-expanded', on);
-  });
-  syncToggleAll();
+function selectFac(no){
+  selNo = no || null;
+  $('list').querySelectorAll('.row').forEach(r => r.classList.toggle('sel', +r.dataset.no === selNo));
+  $('facSelect').value = selNo || '';
+  applyFilter();
+  const el = selNo && $('fac-'+selNo);
+  if(el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 function syncToggleAll(){
-  $('btnToggleAll').textContent = $('list').classList.contains('allopen') ? '전체 접기' : '전체 펼치기';
+  $('btnToggleAll').textContent = $('list').classList.contains('all') ? '선택 기관만 보기' : '전체 기관 보기';
 }
 
 function bindRows(){
   $('list').querySelectorAll('.row').forEach(row => {
     const no = row.dataset.no;
-    const head = row.querySelector('.rhead');
-    head.addEventListener('click', () => { $('list').classList.remove('allopen'); setOpen(+no); });
-    head.addEventListener('keydown', e => {
-      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); $('list').classList.remove('allopen'); setOpen(+no); }
-    });
     row.addEventListener('click', e => {
       const b = e.target.closest('button[data-act="status"]'); if(!b) return;
       data[no].status = (data[no].status === b.dataset.v) ? 'none' : b.dataset.v;
@@ -782,33 +738,21 @@ function afterEdit(row,no){
 
 function refresh(){
   let done=0, issue=0, wait=0, both=0, ship=0, res=0;
-  $('chips').innerHTML = FACILITIES.map(f => {
+  let opts = `<option value="">▼ 기관을 선택하세요 (${FACILITIES.length}개)</option>`;
+  FACILITIES.forEach(f => {
     const d = data[f.no];
-    const hasIssue = !!d.issue || d.status==='miss' || d.status==='part';
+    const hasIssue = hasIssueOf(d);
     if(hasIssue) issue++;
     if(hasIssue && d.resolved) res++;
     if(d.shipStart) ship++;
     if(d.status==='done') done++;
     if(d.status==='none') wait++;
     if(d.ackWV && d.ackPM) both++;
-    const note = d.issue ? ` <span class="chip-flag">· ${d.issue}</span>` : '';
-    return `<button class="chip" data-s="${d.status}" data-no="${f.no}">
-      <span class="chip-name"><span class="chip-no">${f.no}</span>${f.name}</span>
-      <span class="mini" title="① 배송 시작 → ② 수령/이슈 → ③ 풀무원 조치 → ④ 문제 해결">${miniHTML(d)}</span>
-      <span class="chip-state">${STATUS_LABEL[d.status]}${note}</span>
-      <span class="chip-acks">
-        <i class="ackdot wv ${d.ackWV?'on':''}">${d.ackWV?'✓ ':''}월드비전</i>
-        <i class="ackdot pm ${d.ackPM?'on':''}">${d.ackPM?'✓ ':''}풀무원</i>
-      </span></button>`;
-  }).join('');
-  $('chips').onclick = e => {
-    const b = e.target.closest('.chip'); if(!b) return;
-    const el = $('fac-'+b.dataset.no);
-    if(el){ el.classList.remove('hide');
-      $('list').classList.remove('allopen'); if(openNo !== +b.dataset.no) setOpen(+b.dataset.no);
-      el.scrollIntoView({behavior:'smooth',block:'center'});
-      el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),1200); }
-  };
+    const sl = stepsOf(d).map(x => x.label).join(' › ');
+    opts += `<option value="${f.no}" ${selNo===f.no?'selected':''}>${f.no}. ${f.name}  —  ${sl}${d.issue?' ⚠ '+d.issue:''}</option>`;
+  });
+  $('facSelect').innerHTML = opts;
+  $('facSelect').value = selNo || '';
   $('cDone').textContent = done; $('cIssue').textContent = issue;
   $('cWait').textContent = wait; $('cAck').textContent = both;
   $('cShip').textContent = ship; $('cRes').textContent = res + '/' + issue;
@@ -816,18 +760,25 @@ function refresh(){
   applyFilter();
 }
 function applyFilter(){
-  const on = $('onlyIssue').checked; let shown = 0;
-  $('list').querySelectorAll('.row').forEach(row => {
+  const only = $('onlyIssue').checked, list = $('list');
+  list.classList.toggle('all', only || list.dataset.all === '1');
+  let shown = 0;
+  list.querySelectorAll('.row').forEach(row => {
     const d = data[row.dataset.no];
-    const keep = !on || d.status!=='done' || !!d.issue;
+    const keep = !only || d.status!=='done' || !!d.issue;
     row.classList.toggle('hide', !keep); if(keep) shown++;
   });
-  const old = $('list').querySelector('.empty'); if(old) old.remove();
-  if(shown===0){
+  const old = list.querySelector('.empty'); if(old) old.remove();
+  if(only && shown===0){
     const e = document.createElement('div');
     e.className='empty'; e.textContent='이슈나 미확인 건이 없습니다. 이번 달 배송은 모두 정상 수령되었습니다.';
-    $('list').appendChild(e);
+    list.appendChild(e);
   }
+  const all = list.classList.contains('all');
+  $('pickHint').style.display = (!all && !selNo) ? '' : 'none';
+  const sel = selNo && FACILITIES.find(f => f.no === selNo);
+  $('pickSum').textContent = all ? '전체 기관을 한꺼번에 보는 중' : (sel ? `${sel.name} 상세 기록` : '');
+  syncToggleAll();
 }
 
 $('btnYear').onclick = async () => {
@@ -937,10 +888,6 @@ function bulkShip(){
   const n = FACILITIES.filter(f => data[f.no].shipStart !== to).length;
   if(!n){ toast('바뀔 항목이 없습니다'); return; }
   const day = ($('shipAllDate').value || today());
-  const msg = to
-    ? `${YEAR}년 ${month}월 ${FACILITIES.length}개 기관 전체를\n«배송 시작» (${fmtDay(day)}) 으로 표시합니다. (${n}개 기관 변경)`
-    : `${YEAR}년 ${month}월 ${FACILITIES.length}개 기관의\n«배송 시작» 을 모두 해제합니다. (${n}개 기관 변경)`;
-  if(!confirm(msg)) return;
   const stamp = now();
   FACILITIES.forEach(f => {
     const d = data[f.no];
@@ -948,17 +895,18 @@ function bulkShip(){
     d.shipStart = to; d.seed = false; d.atPM = stamp;
     d.shipDate = to ? day : '';
   });
-  render(); save(true);
-  toast(to ? `${n}개 기관을 배송 시작 처리했습니다` : `${n}개 기관의 배송 시작을 해제했습니다`);
+  dirty = true; render(); save(true);
+  toast(to ? `${n}개 기관을 배송 시작 처리했습니다 (${fmtDay(day)})` : `${n}개 기관의 배송 시작을 해제했습니다`);
 }
 $('btnAckWV').onclick = () => bulkAck('wv');
 $('btnAckPM').onclick = () => bulkAck('pm');
 
 $('btnShipAll').onclick = () => bulkShip();
 $('btnToggleAll').onclick = () => {
-  $('list').classList.toggle('allopen');
-  syncToggleAll();
+  const l = $('list'); l.dataset.all = l.dataset.all === '1' ? '' : '1';
+  applyFilter();
 };
+$('facSelect').onchange = e => { $('list').dataset.all = ''; selectFac(+e.target.value); };
 $('onlyIssue').onchange = applyFilter;
 $('btnCsv').onclick = csv;
 $('btnPrint').onclick = () => window.print();
