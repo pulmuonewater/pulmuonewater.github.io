@@ -661,9 +661,6 @@ function render(){
         </div>
       </div>
 
-      <div class="rfoot">
-        <div class="stamp">${stampHTML(d)}</div>
-      </div>
       </div>
 
     </article>`;
@@ -724,7 +721,6 @@ function needFlag(row, d){
   if(n) n.classList.toggle('on', !!(d.issue || d.status==='miss' || d.status==='part') && !d.pmNote.trim());
 }
 function afterEdit(row,no){
-  row.querySelector('.stamp').innerHTML = stampHTML(data[no]);
   const st = row.querySelector('[data-steps]'); if(st) st.innerHTML = stepsHTML(data[no]);
   needFlag(row, data[no]);
   refresh();
