@@ -15,6 +15,9 @@
     --r:7px;
   }
   *{box-sizing:border-box}
+  /* 전역 줄바꿈 규칙: 어절(단어) 중간에서 끊지 않는다. 앞으로 추가되는 화면에도 자동 적용 */
+  html{word-break:keep-all;overflow-wrap:break-word;line-break:strict}
+  *,*::before,*::after,input,textarea,select,button{word-break:inherit;overflow-wrap:inherit}
   html,body{margin:0;padding:0}
   body{
     background:var(--paper); color:var(--ink);
