@@ -566,7 +566,7 @@ function stepsOf(d){
     {st: d.shipStart ? 'done' : 'todo', label: d.shipStart ? '배송 시작' : '배송 전'},
     {st: d.status==='none' ? 'todo' : (iss ? 'flag' : 'done'),
      label: d.status==='none' ? '수령 대기' : STATUS_LABEL[d.status] + (d.issue ? ' · 이슈' : '')},
-    iss ? {st: (d.pmNote.trim() && d.ackPM) ? 'done' : 'warn', label: (d.pmNote.trim() && d.ackPM) ? '조치 완료' : '조치 대기'}
+    iss ? {st: d.pmNote.trim() ? 'done' : 'warn', label: d.pmNote.trim() ? '조치 완료' : '조치 대기'}
         : {st: d.ackPM ? 'done' : 'todo', label: d.ackPM ? '확인 완료' : '확인 대기'},
     iss ? {st: d.resolved ? 'done' : 'warn', label: d.resolved ? '해결 완료' : '해결 대기'}
         : {st: 'na', label: '해당 없음'}
@@ -662,12 +662,6 @@ function render(){
       </div>
 
       <div class="rfoot">
-        <label class="ack wv ${d.ackWV?'on':''}">
-          <input type="checkbox" data-act="ackWV" ${d.ackWV?'checked':''}> 월드비전 확인
-        </label>
-        <label class="ack pm ${d.ackPM?'on':''}">
-          <input type="checkbox" data-act="ackPM" ${d.ackPM?'checked':''}> 풀무원샘물 확인
-        </label>
         <div class="stamp">${stampHTML(d)}</div>
       </div>
       </div>
