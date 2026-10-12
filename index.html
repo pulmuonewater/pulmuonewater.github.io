@@ -52,7 +52,7 @@
   .counts b{display:block;font-size:23px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
   .counts span{font-size:11.5px;color:var(--ink-soft)}
   .c-done b{color:var(--ok)} .c-issue b{color:var(--bad)} .c-wait b{color:var(--ink-faint)}
-  .c-ack b{color:var(--spring)} .c-ship b{color:var(--wv)} .c-res b{color:var(--fac)}
+  .c-ship b{color:var(--wv)} .c-res b{color:var(--fac)}
 
 
 
@@ -247,7 +247,6 @@
         <div class="c-done"><b id="cDone">0</b><span>수령완료</span></div>
         <div class="c-issue"><b id="cIssue">0</b><span>배송이슈</span></div>
         <div class="c-wait"><b id="cWait">10</b><span>확인대기</span></div>
-        <div class="c-ack"><b id="cAck">0</b><span>양측 확인</span></div>
         <div class="c-res"><b id="cRes">0</b><span>이슈 해결</span></div>
       </div>
     </div>
@@ -290,7 +289,6 @@
     <div class="role wv">
       <b>월드비전 담당자</b>
       <p>시설별 수령 여부 · 배송이슈 확인</p>
-      <button class="btn btn-wv btn-bulk" id="btnAckWV">월드비전 일괄확인</button>
     </div>
     <div class="role pm">
       <b>풀무원샘물 담당자</b>
@@ -299,7 +297,6 @@
         <input type="date" class="dateinput" id="shipAllDate" aria-label="배송 시작일">
         <button class="btn btn-pm btn-bulk" id="btnShipAll">배송 일괄 시작</button>
       </div>
-      <button class="btn btn-pm btn-bulk" id="btnAckPM">풀무원샘물 일괄확인</button>
     </div>
   </div>
 
@@ -727,7 +724,7 @@ function afterEdit(row,no){
 }
 
 function refresh(){
-  let done=0, issue=0, wait=0, both=0, ship=0, res=0;
+  let done=0, issue=0, wait=0, ship=0, res=0;
   let opts = `<option value="">▼ 기관을 선택하세요 (${FACILITIES.length}개)</option>`;
   FACILITIES.forEach(f => {
     const d = data[f.no];
@@ -737,13 +734,12 @@ function refresh(){
     if(d.shipStart) ship++;
     if(d.status==='done') done++;
     if(d.status==='none') wait++;
-    if(d.ackWV && d.ackPM) both++;
     opts += `<option value="${f.no}" ${selNo===f.no?'selected':''}>${f.no}. ${f.name}</option>`;
   });
   $('facSelect').innerHTML = opts;
   $('facSelect').value = selNo || '';
   $('cDone').textContent = done; $('cIssue').textContent = issue;
-  $('cWait').textContent = wait; $('cAck').textContent = both;
+  $('cWait').textContent = wait;
   $('cShip').textContent = ship; $('cRes').textContent = res + '/' + issue;
   syncBulkLabels();
   applyFilter();
@@ -831,45 +827,10 @@ function csv(){
   toast('CSV 파일을 내려받았습니다');
 }
 
-/* ── 월드비전 · 풀무원샘물 일괄 확인 ──
-   전부 체크되어 있으면 «확인해제», 아니면 «일괄확인» 으로 동작한다. */
-const BULK = [
-  {side:'wv', field:'ackWV', btn:'btnAckWV', at:'atWV', label:'월드비전'},
-  {side:'pm', field:'ackPM', btn:'btnAckPM', at:'atPM', label:'풀무원샘물'}
-];
 function syncBulkLabels(){
   const allShip = FACILITIES.every(f => data[f.no] && data[f.no].shipStart);
   $('btnShipAll').textContent = allShip ? '배송 시작 해제' : '배송 일괄 시작';
   if(!$('shipAllDate').value) $('shipAllDate').value = today();
-  BULK.forEach(b => {
-    const all = FACILITIES.every(f => data[f.no] && data[f.no][b.field]);
-    const el = $(b.btn);
-    el.textContent = all ? `${b.label} 확인해제` : `${b.label} 일괄확인`;
-    el.title = all
-      ? `${FACILITIES.length}개 기관의 «${b.label} 확인» 을 모두 해제합니다`
-      : `${FACILITIES.length}개 기관을 한 번에 «${b.label} 확인» 처리합니다`;
-  });
-}
-function bulkAck(side){
-  const b = BULK.find(x => x.side === side);
-  const to = !FACILITIES.every(f => data[f.no][b.field]);
-  const n = FACILITIES.filter(f => data[f.no][b.field] !== to).length;
-  if(!n){ toast('바뀔 항목이 없습니다'); return; }
-  const msg = to
-    ? `${YEAR}년 ${month}월 ${FACILITIES.length}개 기관 전체를\n«${b.label} 확인» 으로 표시합니다. (${n}개 기관 변경)`
-    : `${YEAR}년 ${month}월 ${FACILITIES.length}개 기관의\n«${b.label} 확인» 을 모두 해제합니다. (${n}개 기관 변경)`;
-  if(!confirm(msg)) return;
-  const stamp = now();
-  FACILITIES.forEach(f => {
-    const d = data[f.no];
-    if(d[b.field] === to) return;
-    d[b.field] = to;
-    d.seed = false;
-    d[b.at] = stamp;
-  });
-  render(); save(true);
-  toast(to ? `${n}개 기관을 ${b.label} 확인 처리했습니다`
-           : `${n}개 기관의 ${b.label} 확인을 해제했습니다`);
 }
 /* ── 풀무원샘물 일괄 배송 시작 (10개 기관 동시 출고) ── */
 function bulkShip(){
@@ -887,8 +848,6 @@ function bulkShip(){
   dirty = true; render(); save(true);
   toast(to ? `${n}개 기관을 배송 시작 처리했습니다 (${fmtDay(day)})` : `${n}개 기관의 배송 시작을 해제했습니다`);
 }
-$('btnAckWV').onclick = () => bulkAck('wv');
-$('btnAckPM').onclick = () => bulkAck('pm');
 
 $('btnShipAll').onclick = () => bulkShip();
 $('btnToggleAll').onclick = () => {
