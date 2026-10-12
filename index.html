@@ -456,11 +456,14 @@ const Store = {
     }catch(e){
       await fetch(API_URL, Object.assign({mode:'no-cors'}, opt));   // 차단되면 우회 전송
     }
-    const back = await this.get(k);                    // 실제로 저장됐는지 되읽어 확인
-    if(!back || back.value !== v){
-      throw new Error('시트에 기록되지 않았습니다. Apps Script를 «새 버전»으로 다시 배포했는지 확인해 주세요.');
-    }
     return true;
+  },
+
+  /* 저장 확인은 화면을 붙잡지 않고 뒤에서 따로 한다 */
+  async verify(k, v){
+    if(!API_URL) return true;
+    const back = await this.get(k);
+    return !!back && back.value === v;
   }
 };
 
@@ -487,21 +490,48 @@ function migrate(d){
   return b;
 }
 
+/* 마지막으로 본 내용을 이 기기에 저장해 두었다가, 다음에 열 때 먼저 보여준다 */
+const cacheKey = k => 'pw-cache:' + k;
+function cacheWrite(k, v){ try{ localStorage.setItem(cacheKey(k), v); }catch(e){} }
+function cacheRead(k){ try{ return localStorage.getItem(cacheKey(k)); }catch(e){ return null; } }
+function rowsOf(text){
+  const j = JSON.parse(text);
+  return (j && j.rows) ? j.rows : (j || {});
+}
 async function loadMonth(){
-  $('metaLine').textContent = '불러오는 중…';
+  const m = month, k = key(m);
   data = {};
-  let raw = {}, stored = false;
+  let shown = null;
+  const c = cacheRead(k);
+  if(c){
+    try{
+      const raw = rowsOf(c);
+      FACILITIES.forEach(f => { data[f.no] = migrate(raw[f.no]); });
+      shown = JSON.stringify(data);
+      render(); metaText(); setSaveState('', '최신 확인 중…');
+    }catch(e){ data = {}; }
+  }
+  if(!shown) $('metaLine').textContent = '불러오는 중…';
+  let raw = {}, stored = false, fetched = false;
   try{
-    const r = await Store.get(key(month));
+    const r = await Store.get(k);
+    fetched = true;
     if(r && r.value){
-      const j = JSON.parse(r.value);
-      raw = (j && j.rows) ? j.rows : (j || {});
+      raw = rowsOf(r.value);
       stored = Object.keys(raw).length > 0;
+      if(stored) cacheWrite(k, r.value);
     }
   }catch(e){}
-  FACILITIES.forEach(f => { data[f.no] = migrate(raw[f.no]); });
-  const seeded = stored ? false : applyDefaults(month, data);
-  render(); metaText();
+  if(m !== month) return;                       // 기다리는 사이 다른 달로 이동함
+  if(!fetched && shown){ setSaveState('', '저장된 화면 표시 중'); startPoll(); return; }
+  if(dirty && shown) { startPoll(); return; }   // 불러오는 동안 입력했다면 덮어쓰지 않는다
+  const fresh = {};
+  FACILITIES.forEach(f => { fresh[f.no] = migrate(raw[f.no]); });
+  const seeded = stored ? false : applyDefaults(m, fresh);
+  if(JSON.stringify(fresh) !== shown){
+    data = fresh;
+    render(); metaText();
+  }
   setSaveState(stored ? 'saved' : '', stored ? '불러옴' : '자동 저장');
   if(seeded) save(true);          // 최초 1회만 기록을 남긴다
   startPoll();
@@ -522,17 +552,21 @@ function setSaveState(cls, text){
 }
 function payload(){ return JSON.stringify({savedAt: now(), rows: data}); }
 
+let saveSeq = 0;
 async function save(silent, attempt){
   attempt = attempt || 0;
   clearTimeout(saveTimer);
   setSaveState('saving','저장 중…');
+  const seq = ++saveSeq, mk = key(month), body = payload(), snap = JSON.stringify(data);
   try{
-    await Store.set(key(month), payload());
-    dirty = false; metaText();
+    await Store.set(mk, body);
+    if(JSON.stringify(data) === snap) dirty = false;   // 저장하는 동안 새로 입력했다면 계속 저장 대기
+    metaText(); cacheWrite(mk, body);
     if(yearCache) yearCache[month] = data;
     const d = new Date();
     setSaveState('saved', `저장됨 ${pad(d.getHours())}:${pad(d.getMinutes())}`);
     $('saveerr').classList.remove('on');
+    verifyLater(seq, mk, body);
   }catch(e){
     if(attempt < 2){                       // 통신이 끊겼을 때 자동 재시도
       setSaveState('saving', `저장 재시도 중… (${attempt+1}/2)`);
@@ -547,11 +581,25 @@ async function save(silent, attempt){
     showSaveError(e);
   }
 }
+/* 시트에 실제로 기록됐는지 뒤에서 확인한다. 그 사이 새로 저장했다면 확인을 건너뛴다. */
+async function verifyLater(seq, mk, body){
+  try{
+    if(await Store.verify(mk, body)) return;
+    await new Promise(r => setTimeout(r, 2500));       // 반영 지연 대비 한 번 더
+    if(seq !== saveSeq) return;
+    if(await Store.verify(mk, body)) return;
+  }catch(e){ return; }                                  // 확인 통신 실패는 저장 실패로 보지 않는다
+  if(seq !== saveSeq) return;
+  const err = new Error('시트에 기록되지 않았습니다. Apps Script를 «새 버전»으로 다시 배포했는지 확인해 주세요.');
+  setSaveState('err','저장 확인 실패 · 눌러서 다시 시도');
+  const el = $('autosave'); el.title = err.message; el.onclick = () => save(true);
+  showSaveError(err);
+}
 function queueSave(){
   dirty = true;
   setSaveState('saving','입력 중…');
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(()=>save(true), 700);
+  saveTimer = setTimeout(()=>save(true), 400);
 }
 function touch(no, field){
   data[no].seed = false;
