@@ -566,7 +566,7 @@ function stepsOf(d){
     iss ? {st: d.pmNote.trim() ? 'done' : 'warn', label: d.pmNote.trim() ? '조치 완료' : '조치 대기'}
         : {st: d.ackPM ? 'done' : 'todo', label: d.ackPM ? '확인 완료' : '확인 대기'},
     iss ? {st: d.resolved ? 'done' : 'warn', label: d.resolved ? '해결 완료' : '해결 대기'}
-        : {st: 'na', label: '해당 없음'}
+        : {st: d.status==='done' ? 'done' : 'na', label: '해당 없음'}
   ];
 }
 const stepsHTML = d => stepsOf(d).map((s,i) =>
