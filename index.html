@@ -463,7 +463,14 @@ const Store = {
   async verify(k, v){
     if(!API_URL) return true;
     const back = await this.get(k);
-    return !!back && back.value === v;
+    if(!back) return false;
+    if(back.value === v) return true;
+    /* 내용이 달라도, 시트의 저장 시각이 내 것과 같거나 더 최신이면
+       그 사이 다른 담당자가 저장한 것이므로 정상으로 본다 */
+    try{
+      const a = JSON.parse(back.value).savedAt, b = JSON.parse(v).savedAt;
+      return !!a && !!b && a >= b;
+    }catch(e){ return false; }
   }
 };
 
