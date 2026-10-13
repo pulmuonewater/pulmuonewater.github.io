@@ -76,6 +76,8 @@
   .ph img{width:84px;height:84px;object-fit:cover;border-radius:5px;border:1px solid var(--line);display:block;background:#fff}
   .phx{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:0;background:var(--ink);color:#fff;cursor:pointer;line-height:1;font-size:14px}
   .photo-add{cursor:pointer}
+  .btn-wv{border-color:#F2C2AE;color:var(--wv-ink);background:#FFF7F4}
+  .btn-wv:hover{background:var(--wv);border-color:var(--wv);color:#fff}
   .ack.wv input{accent-color:var(--wv)} .ack.wv.on{color:var(--wv-ink);font-weight:600}
   .subtime{font-size:12px;color:var(--ink-faint);margin-left:6px}
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
@@ -387,6 +389,7 @@
     <div class="role wv">
       <b>월드비전 담당자</b>
       <p>시설별 수령 여부 · 배송이슈 확인 → ③ 조치 내용을 확인하고 «월드비전 확인» 체크</p>
+      <button class="btn btn-wv btn-bulk" id="btnAckWV" type="button">월드비전 일괄확인</button>
     </div>
     <div class="role pm">
       <b>풀무원샘물 담당자</b>
@@ -1310,9 +1313,11 @@ function csv(){
   toast('CSV 파일을 내려받았습니다');
 }
 
-let releaseArmed = null;
+let releaseArmed = null, wvArmed = null;
 function syncBulkLabels(){
   const allShip = FACILITIES.every(f => data[f.no] && data[f.no].shipStart);
+  const allWV = FACILITIES.every(f => data[f.no] && data[f.no].ackWV);
+  $('btnAckWV').textContent = wvArmed ? '한 번 더 누르면 해제됩니다' : (allWV ? '월드비전 확인해제' : '월드비전 일괄확인');
   $('btnShipAll').textContent = releaseArmed ? '한 번 더 누르면 해제됩니다' : (allShip ? '배송 시작 해제' : '배송 일괄 시작');
   if(!$('shipAllDate').value) $('shipAllDate').value = today();
 }
@@ -1339,6 +1344,27 @@ function bulkShip(){
   toast(to ? `${n}개 기관을 배송 시작 처리했습니다 (${fmtDay(day)})` : `${n}개 기관의 배송 시작을 해제했습니다`);
 }
 
+/* ── 월드비전 일괄 확인 (③ «월드비전 확인» 을 10개 기관에 한 번에) ── */
+function bulkWV(){
+  if(!loaded){ toast('불러오는 중입니다. 잠시 후 다시 눌러 주세요.'); return; }
+  const to = !FACILITIES.every(f => data[f.no].ackWV);
+  const n = FACILITIES.filter(f => data[f.no].ackWV !== to).length;
+  if(!n){ toast('바뀔 항목이 없습니다'); return; }
+  if(!to && !wvArmed){                              // 해제는 실수 방지를 위해 두 번 눌러야 한다
+    wvArmed = setTimeout(() => { wvArmed = null; syncBulkLabels(); }, 3500);
+    syncBulkLabels(); return;
+  }
+  clearTimeout(wvArmed); wvArmed = null;
+  const stamp = now();
+  FACILITIES.forEach(f => {
+    const d = data[f.no];
+    if(d.ackWV === to) return;
+    d.ackWV = to; d.seed = false; d.atWV = to ? stamp : '';
+  });
+  dirty = true; pendWrite(); render(); save();
+  toast(to ? `${n}개 기관을 월드비전 확인 처리했습니다` : `${n}개 기관의 월드비전 확인을 해제했습니다`);
+}
+$('btnAckWV').onclick = () => bulkWV();
 $('btnShipAll').onclick = () => bulkShip();
 $('btnToggleAll').onclick = () => {
   const l = $('list');
