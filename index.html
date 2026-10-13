@@ -835,7 +835,7 @@ function photosHTML(d){
   const th = d.photos.map((p,i) => `<span class="ph"><a href="https://drive.google.com/file/d/${p.id}/view" target="_blank" rel="noopener"><img src="https://drive.google.com/thumbnail?id=${p.id}&amp;sz=w240" alt="${esc(p.name || '첨부 사진')}" loading="lazy"></a><button type="button" class="phx" data-act="photoDel" data-i="${i}" aria-label="사진 연결 삭제">×</button></span>`).join('');
   const add = (Features.photos && d.photos.length < PHOTO_MAX)
     ? `<label class="btn photo-add">사진 추가<input type="file" accept="image/*" multiple data-act="photoAdd" hidden></label>` : '';
-  return `<label>사진 (파손·누수 등, 최대 ${PHOTO_MAX}장)</label><div class="photos">${th}${add}</div>`;
+  return `<label>사진 (배송누락, 파손 등, 최대 ${PHOTO_MAX}장)</label><div class="photos">${th}${add}</div>`;
 }
 const needText = d => d.issue
   ? '배송이슈 등록됨 · 풀무원샘물 회신 대기'
