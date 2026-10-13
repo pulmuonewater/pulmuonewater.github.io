@@ -167,8 +167,22 @@
   header :focus-visible{outline-color:#fff}
   .localnote .btn{margin-top:8px}
   .list .row{display:none}
-  .list.all .row:not(.hide){display:block}
+  .list.all{display:none}
   .list:not(.all) .row.sel{display:block}
+  .overview{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-top:14px;overflow:hidden}
+  .ohead,.orow{display:grid;grid-template-columns:minmax(150px,1.3fr) repeat(4,minmax(0,1fr)) 70px;gap:8px;align-items:center;padding:10px 16px}
+  .ohead{background:#F7FAFB;font-size:12px;color:var(--ink-soft);font-weight:600;border-bottom:1px solid var(--line)}
+  .orow{width:100%;text-align:left;font:inherit;background:#fff;border:0;border-bottom:1px solid var(--line-soft);border-left:5px solid var(--idle);cursor:pointer;border-radius:0}
+  .orow:last-child{border-bottom:0}
+  .orow[data-s="done"]{border-left-color:var(--ok)} .orow[data-s="part"]{border-left-color:var(--warn)} .orow[data-s="miss"]{border-left-color:var(--bad)}
+  .orow:hover{background:#F4F9F6}
+  .orow.hide{display:none}
+  .oname{font-weight:700;letter-spacing:-.02em;min-width:0}
+  .oname .no{color:var(--ink-faint);font-weight:600;margin-right:6px;font-size:12px}
+  .orow .step{white-space:normal;line-height:1.3}
+  .owv{font-size:12px;font-weight:600;color:var(--ink-faint);text-align:center}
+  .owv.on{color:var(--wv-ink)}
+  .ohint{padding:8px 16px;font-size:12px;color:var(--ink-soft);background:#F7FAFB;border-top:1px solid var(--line-soft)}
   .steps{display:flex;gap:4px 14px;flex-wrap:wrap;margin-left:auto}
   .step{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-faint);white-space:nowrap}
   .step i{width:19px;height:19px;border-radius:50%;display:inline-grid;place-items:center;font-style:normal;
@@ -240,6 +254,10 @@
     .segbtns button{flex:1}
     h1{font-size:23px}
     .picker select{min-width:0;width:100%}
+    .ohead{display:none}
+    .orow{grid-template-columns:1fr 1fr;gap:6px 10px;padding:12px 14px}
+    .orow .oname{grid-column:1 / 2}
+    .orow .owv{grid-column:2 / 3;text-align:right}
     .counts{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px}
     .counts div{min-width:0;text-align:center}
     .counts b{font-size:20px}
@@ -277,7 +295,9 @@
     textarea{height:auto;min-height:60px;border:1px solid #ccc}
     @page{margin:12mm}
     .row{break-inside:avoid;border:1px solid #ccc}
+    .list,.list.all{display:block!important}
     .list .row:not(.hide){display:block!important}
+    .overview{display:none!important}
     body{background:#fff}
   }
 </style>
@@ -378,6 +398,7 @@
     </div>
   </div>
 
+  <section class="overview" id="overview" aria-label="전체 기관 한눈에 보기" hidden></section>
   <div class="list" id="list" aria-live="off"></div>
   <div class="empty" id="pickHint">위에서 <b>기관을 선택</b>하면 상세 기록이 이곳에 펼쳐집니다.</div>
 
@@ -948,6 +969,25 @@ function softRender(){
   const y = window.scrollY; render(); window.scrollTo(0, y);
 }
 
+/* ── 전체 기관 한눈에 보기 (기관당 한 줄) ── */
+function renderOverview(){
+  const box = $('overview');
+  box.innerHTML = `<div class="ohead" aria-hidden="true"><div>기관</div><div>① 배송</div><div>② 수령·이슈</div><div>③ 확인·조치</div><div>④ 해결</div><div style="text-align:center">월드비전</div></div>`
+    + FACILITIES.map(f => {
+      const d = data[f.no];
+      return `<button type="button" class="orow" data-no="${f.no}" data-s="${d.status}" aria-label="${esc(f.name)} 상세 기록 열기">
+        <div class="oname"><span class="no">${f.no}</span>${esc(f.name)}</div>
+        ${stepsOf(d).map((x,i) => `<div class="step" data-st="${x.st}"><i>${x.st==='done'?'✓':i+1}</i>${x.label}</div>`).join('')}
+        <div class="owv ${d.ackWV?'on':''}">${d.ackWV ? '✓ 확인' : '-'}</div>
+      </button>`;
+    }).join('')
+    + `<div class="ohint">기관 줄을 누르면 해당 기관의 상세 기록이 열립니다.</div>`;
+}
+$('overview').addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.orow'); if(!b) return;
+  $('list').dataset.all = ''; $('onlyIssue').checked = false; selectFac(+b.dataset.no);
+  window.scrollTo({top: $('list').getBoundingClientRect().top + window.scrollY - 80, behavior:'smooth'});
+});
 function selectFac(no){
   selNo = no || null;
   $('list').querySelectorAll('.row').forEach(r => r.classList.toggle('sel', +r.dataset.no === selNo));
@@ -957,7 +997,7 @@ function selectFac(no){
   if(el && el.scrollIntoView) el.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 function syncToggleAll(){
-  $('btnToggleAll').textContent = $('list').classList.contains('all') ? '선택 기관만 보기' : '전체 기관 보기';
+  $('btnToggleAll').textContent = $('list').classList.contains('all') ? '기관 선택으로 돌아가기' : '전체 기관 보기';
 }
 
 function bindRows(){
@@ -1042,35 +1082,34 @@ function refresh(){
   $('cWV').textContent = wv + '/' + FACILITIES.length;
   if($('report').classList.contains('on') && loaded) drawReport();
   renderAlerts();
+  renderOverview();
   syncBulkLabels();
   applyFilter();
 }
 function applyFilter(){
-  const only = $('onlyIssue').checked, list = $('list');
-  list.classList.toggle('all', list.dataset.all === '1');
+  const only = $('onlyIssue').checked, list = $('list'), ov = $('overview');
+  const all = list.dataset.all === '1';
+  list.classList.toggle('all', all);
+  ov.hidden = !all;
   let shown = 0;
+  const keepOf = d => !only || d.status!=='done' || hasIssueOf(d);
   list.querySelectorAll('.row').forEach(row => {
-    const d = data[row.dataset.no];
-    const keep = !only || d.status!=='done' || hasIssueOf(d);
+    const keep = keepOf(data[row.dataset.no]);
+    row.classList.toggle('hide', !keep);
+  });
+  ov.querySelectorAll('.orow').forEach(row => {
+    const keep = keepOf(data[row.dataset.no]);
     row.classList.toggle('hide', !keep); if(keep) shown++;
   });
-  const old = list.querySelector('.empty'); if(old) old.remove();
-  const all = list.classList.contains('all');
-  if(only && shown===0){
-    const e = document.createElement('div');
-    e.className='empty'; e.textContent='이슈나 미확인 건이 없습니다. 이번 달 배송은 모두 정상 수령되었습니다.';
-    list.appendChild(e);
-  }
+  [list, ov].forEach(box => { const old = box.querySelector('.empty'); if(old) old.remove(); });
+  const msg = t => { const e = document.createElement('div'); e.className = 'empty'; e.textContent = t; return e; };
+  if(all && only && shown === 0) ov.appendChild(msg('이슈나 미확인 건이 없습니다. 이번 달 배송은 모두 정상 수령되었습니다.'));
   const selRow = selNo && $('fac-'+selNo);
-  const selHidden = !all && only && selRow && selRow.classList && selRow.classList.contains('hide');
-  if(selHidden){
-    const e = document.createElement('div');
-    e.className='empty'; e.textContent='선택한 기관은 이슈·미확인이 아니어서 «이슈·미확인만 보기» 필터에서 제외되었습니다. 필터를 끄면 볼 수 있습니다.';
-    list.appendChild(e);
-  }
+  if(!all && only && selRow && selRow.classList.contains('hide'))
+    list.appendChild(msg('선택한 기관은 이슈·미확인이 아니어서 «이슈·미확인만 보기» 필터에서 제외되었습니다. 필터를 끄면 볼 수 있습니다.'));
   $('pickHint').style.display = (!all && !selNo) ? '' : 'none';
   const sel = selNo && FACILITIES.find(f => f.no === selNo);
-  $('pickSum').textContent = all ? (only ? '이슈·미확인 기관만 보는 중' : '전체 기관을 한꺼번에 보는 중') : (sel ? `${sel.name} 상세 기록` : '');
+  $('pickSum').textContent = all ? (only ? '이슈·미확인 기관만 한눈에 보는 중' : '10개 기관을 한눈에 보는 중 · 기관을 누르면 상세가 열립니다') : (sel ? `${sel.name} 상세 기록` : '');
   syncToggleAll();
 }
 
