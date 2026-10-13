@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#15272F">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="생수 수령확인">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>생수 정기배송 수령 확인 | 월드비전 × 풀무원샘물</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
@@ -58,6 +64,29 @@
   .counts b{display:block;font-size:23px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
   .counts span{font-size:12px;color:var(--ink-soft);white-space:nowrap}
   .meta-faint{color:var(--ink-faint)}
+  .c-wv b{color:var(--wv-ink)}
+  .alerts{padding:10px 20px;background:#FCF2F2;border-bottom:1px solid #E8B4B4;font-size:13px}
+  .alerts b{color:var(--bad);margin-right:8px}
+  .alerts ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+  .alink{font:inherit;font-size:12.5px;padding:5px 11px;border-radius:14px;border:1px solid #E8B4B4;background:#fff;color:#8A1F1F;cursor:pointer}
+  .alink[data-lv="warn"]{border-color:#F0D9AE;color:#8A5A12}
+  .alink:hover{background:#FFF}
+  .photos{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .ph{position:relative;display:inline-block}
+  .ph img{width:84px;height:84px;object-fit:cover;border-radius:5px;border:1px solid var(--line);display:block;background:#fff}
+  .phx{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:0;background:var(--ink);color:#fff;cursor:pointer;line-height:1;font-size:14px}
+  .photo-add{cursor:pointer}
+  .ack.wv input{accent-color:var(--wv)} .ack.wv.on{color:var(--wv-ink);font-weight:600}
+  .subtime{font-size:12px;color:var(--ink-faint);margin-left:6px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
+  .kpi{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:#F7FAFB}
+  .kpi b{display:block;font-size:22px;letter-spacing:-.02em;line-height:1.2}
+  .kpi span{font-size:12px;color:var(--ink-soft)}
+  .rtable{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
+  .rtable th,.rtable td{border-bottom:1px solid var(--line-soft);padding:7px 6px;text-align:left;vertical-align:top}
+  .rtable thead th{color:var(--ink-soft);font-size:12px;border-bottom:1px solid var(--line)}
+  .report-actions{margin-top:14px}
+  .report h3{margin:16px 0 4px;font-size:13.5px}
   .c-done b{color:var(--ok)} .c-issue b{color:var(--bad)} .c-wait b{color:var(--ink-faint)}
   .c-ship b{color:var(--wv)} .c-res b{color:var(--fac)}
 
@@ -211,7 +240,7 @@
     .segbtns button{flex:1}
     h1{font-size:23px}
     .picker select{min-width:0;width:100%}
-    .counts{width:100%;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+    .counts{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px}
     .counts div{min-width:0;text-align:center}
     .counts b{font-size:20px}
     .fieldline{flex-wrap:wrap;white-space:normal;width:100%}
@@ -224,7 +253,7 @@
     .rhead{padding:12px 14px;gap:8px 14px}
     .rstate{padding:12px 14px 0}
     .rbody{padding:12px 14px 14px}
-    .picker,.board-head,.board-bar,.notice{padding-left:14px;padding-right:14px}
+    .picker,.board-head,.board-bar,.notice,.alerts{padding-left:14px;padding-right:14px}
     .tools{width:100%}
     .tools .btn{flex:1 1 auto}
     .wrap{padding:0 14px 60px}
@@ -241,7 +270,10 @@
   @media print{
     header{background:#fff;color:#000;border-top-color:#999}
     header *{color:#000!important}
-    .months,.tools,.toast,.roles,.picker,.notice,.localnote,.board-bar,#pickHint,.counts,.year,.autosave{display:none!important}
+    .months,.tools,.toast,.roles,.picker,.notice,.alerts,.localnote,.board-bar,#pickHint,.counts,.year,.autosave,.photo-add,.phx{display:none!important}
+    body.print-report header,body.print-report .wrap > :not(#report){display:none!important}
+    body.print-report #report{display:block!important;border:0;padding:0}
+    body.print-report .report-actions{display:none!important}
     textarea{height:auto;min-height:60px;border:1px solid #ccc}
     @page{margin:12mm}
     .row{break-inside:avoid;border:1px solid #ccc}
@@ -282,11 +314,13 @@
         <div class="c-issue"><b id="cIssue">0</b><span>배송이슈</span></div>
         <div class="c-wait"><b id="cWait">10</b><span>확인대기</span></div>
         <div class="c-res"><b id="cRes">0</b><span>이슈 해결</span></div>
+        <div class="c-wv"><b id="cWV">0</b><span>월드비전 확인</span></div>
       </div>
     </div>
     <div class="notice" role="note">
       <b>안내</b> 각 담당자는 <b>본인이 체크할 항목에만</b> 입력해 주세요. 다른 기관 담당자의 체크 항목은 수정하지 말아 주세요.
     </div>
+    <div class="alerts" id="alerts" role="region" aria-label="확인이 필요한 기관" hidden></div>
     <div class="picker">
       <label for="facSelect">기관 선택</label>
       <select id="facSelect"></select>
@@ -298,6 +332,7 @@
         <label class="chk"><input type="checkbox" id="onlyIssue"> 이슈·미확인만 보기</label>
         <button class="btn" id="btnToggleAll">전체 기관 보기</button>
         <button class="btn" id="btnYear">연간 현황 보기</button>
+        <button class="btn" id="btnReport">월 마감 리포트</button>
         <button class="btn" id="btnCsv">엑셀(CSV)로 내려받기</button>
         <button class="btn" id="btnPrint">인쇄</button>
         <span class="autosave" id="autosave" role="status" aria-live="polite">자동 저장</span>
@@ -318,6 +353,12 @@
     </div>
   </section>
 
+  <section class="year" id="report" aria-label="월 마감 리포트">
+    <h2 id="reportTitle">월 마감 리포트</h2>
+    <div id="reportBody"></div>
+    <div class="report-actions"><button class="btn" id="btnReportPrint" type="button">리포트 인쇄 · PDF 저장</button></div>
+  </section>
+
   <div class="roles">
     <div class="role">
       <b>시설 담당자</b>
@@ -325,7 +366,7 @@
     </div>
     <div class="role wv">
       <b>월드비전 담당자</b>
-      <p>시설별 수령 여부 · 배송이슈 확인</p>
+      <p>시설별 수령 여부 · 배송이슈 확인 → ③ 조치 내용을 확인하고 «월드비전 확인» 체크</p>
     </div>
     <div class="role pm">
       <b>풀무원샘물 담당자</b>
@@ -368,7 +409,13 @@ const STATUS_LABEL = {done:'수령완료', part:'부분수령', miss:'미수령'
 /* 어느 쪽 담당자가 입력한 항목인지 — 입력 시각(atFac / atPM) 기록에 쓴다 */
 const SIDE = {status:'fac', recvDate:'fac', issue:'fac', issueNote:'fac',
               resolved:'fac', resolveDate:'fac', resolveNote:'fac',
-              shipStart:'pm', shipDate:'pm', pmNote:'pm'};
+              shipStart:'pm', shipDate:'pm', pmNote:'pm', ackWV:'wv', photos:'fac'};
+const AT_KEY = {fac:'atFac', pm:'atPM', wv:'atWV'};
+const TEXT_MAX = 1500;             // 시트 한 칸(5만 자) 안에 10개 기관 기록이 들어가도록 항목당 길이를 제한한다
+const PHOTO_MAX = 4;
+const PHOTO_ID = /^[\w-]{10,80}$/;
+const ALERT_DAYS = {recv:3, reply:2, resolve:5};   // 이 일수가 지나도록 다음 단계가 없으면 «확인 필요»로 알린다
+const Features = {photos:false};   // Apps Script 가 지원을 알려오면 켜진다 (probeFeatures)
 
 let month = (new Date().getMonth()+1);
 if(!MONTHS.includes(month)) month = month === 1 ? 2 : 12;
@@ -380,6 +427,8 @@ let dirty = false, saveTimer = null, savingP = null, saveAgain = false, saveSeq 
 let yearCache = null, yearAt = 0;
 let selNo = null;                  // 드롭다운에서 선택한 기관
 let pendingRender = false;
+let offline = false;               // 서버 값을 확인하지 못한 채 기기에 저장된 내용으로 열린 상태
+let retryTimer = null;
 let prefetch = null;               // 입력 시작 순간 미리 읽어 둔 서버 값 (저장 속도 단축용)
 
 /* 화면 요소가 없어도 스크립트 전체가 멈추지 않도록 빈 껍데기를 돌려준다 */
@@ -401,7 +450,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
   c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const blank = () => ({status:'none', recvDate:'', issue:'', issueNote:'', pmNote:'',
                       shipStart:false, shipDate:'', resolved:false, resolveDate:'', resolveNote:'',
-                      atFac:'', atPM:'', seed:false});
+                      ackWV:false, atFac:'', atWV:'', atPM:'', photos:[], seed:false});
 /* ══════════════════════════════════════════════════════════
    월별 수령 실적 기준값
      'all'      → 10개 기관 전부 수령완료
@@ -506,7 +555,7 @@ function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on'
 
 /* 시트·캐시에서 읽은 값은 형식을 검사해서 받는다 (변조·오입력 방어) */
 const isDate = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
-const txt = (v, n) => (typeof v === 'string' ? v : (v == null ? '' : String(v))).slice(0, n || 5000);
+const txt = (v, n) => (typeof v === 'string' ? v : (v == null ? '' : String(v))).slice(0, n || TEXT_MAX);
 function migrate(d){
   const b = blank();
   if(!d || typeof d !== 'object') return b;
@@ -523,6 +572,11 @@ function migrate(d){
   b.resolveNote = txt(d.resolveNote);
   b.atFac = txt(d.atFac || d.at, 30);
   b.atPM = txt(d.atPM, 30);
+  b.atWV = txt(d.atWV, 30);
+  b.ackWV = d.ackWV === true;
+  b.photos = Array.isArray(d.photos)
+    ? d.photos.filter(x => x && PHOTO_ID.test(x.id)).slice(0, PHOTO_MAX).map(x => ({id:x.id, name:txt(x.name, 60), at:txt(x.at, 30)}))
+    : [];
   b.seed = d.seed === true;
   return b;
 }
@@ -531,6 +585,23 @@ function migrate(d){
 const cacheKey = k => 'pw-cache:' + k;
 function cacheWrite(k, v){ try{ localStorage.setItem(cacheKey(k), v); }catch(e){} }
 function cacheRead(k){ try{ return localStorage.getItem(cacheKey(k)); }catch(e){ return null; } }
+/* 아직 서버에 올리지 못한 입력은 기기에 따로 보관한다 (오프라인·창 닫힘 대비) */
+const pendKey = k => 'pw-pending:' + k;
+function pendWrite(){ if(!API_URL) return; try{ localStorage.setItem(pendKey(key(month)), JSON.stringify({rows:data, base})); }catch(e){} }
+function pendClear(k){ try{ localStorage.removeItem(pendKey(k)); }catch(e){} }
+function pendRead(k){
+  try{
+    const t = localStorage.getItem(pendKey(k)); if(!t) return null;
+    const j = JSON.parse(t);
+    if(!j || typeof j.rows !== 'object' || typeof j.base !== 'object') return null;
+    const b = {};
+    FACILITIES.forEach(f => {
+      let o; try{ o = migrate(JSON.parse(j.base[f.no])); }catch(e){ o = blank(); }
+      b[f.no] = JSON.stringify(o);
+    });
+    return {rows: rowsFrom(j.rows), base: b};
+  }catch(e){ return null; }
+}
 function rowsOf(text){
   const j = JSON.parse(text);
   const r = (j && j.rows) ? j.rows : (j || {});
@@ -551,7 +622,7 @@ async function loadMonth(){
   dirty = false; pendingRender = false;
   $('saveerr').classList.remove('on');
   data = rowsFrom({});
-  const c = cacheRead(k);
+  const c = cacheRead(k), pend = pendRead(k);
   let shown = false;
   if(c){
     try{ data = rowsFrom(rowsOf(c)); shown = true; }catch(e){}
@@ -566,10 +637,19 @@ async function loadMonth(){
   }catch(e){
     if(m !== month || my !== loadSeq) return;
     console.error(e);
+    if(shown || pend){                             // 기기에 저장된 내용이 있으면 오프라인으로 계속 입력할 수 있다
+      if(pend){ data = pend.rows; base = pend.base; dirty = true; } else base = snapshot(data);
+      offline = true; setLoaded(true); render(); metaText();
+      setSaveState('err', '오프라인 · 연결되면 자동 저장');
+      showOfflineNote();
+      startRetry();
+      return;
+    }
     setSaveState('err', '불러오기 실패');
-    showLoadError(e);                              // 서버 값을 모르는 채로는 편집·저장하지 않는다
+    showLoadError(e);                              // 서버 값을 전혀 모르는 채로는 편집·저장하지 않는다
     return;
   }
+  offline = false; clearInterval(retryTimer);
   if(m !== month || my !== loadSeq) return;        // 기다리는 사이 다른 달로 이동함
   let raw = {}, stored = false;
   if(r && r.value){
@@ -579,11 +659,16 @@ async function loadMonth(){
   data = rowsFrom(raw);
   const seeded = stored ? false : applyDefaults(m, data);
   base = snapshot(stored ? data : rowsFrom({}));   // 서버에 아직 없는 기준값은 «내가 바꾼 것»으로 취급
+  let resume = false;
+  if(pend){ data = pend.rows; base = pend.base; resume = true; }   // 전송하지 못했던 내 입력을 이어서 올린다
   setLoaded(true);
   render(); metaText();
   setSaveState(stored ? 'saved' : '', stored ? '불러옴' : '자동 저장');
-  if(seeded){ dirty = true; save(); }              // 최초 1회만 기록을 남긴다
+  if(resume){ dirty = true; save(); }
+  else if(seeded){ dirty = true; save(); }         // 최초 1회만 기록을 남긴다
   if(yearCache){ yearCache[m] = data; if($('year').classList.contains('on')) drawYear(); }
+  if($('report').classList.contains('on')) drawReport();
+  probeFeatures();
   startPoll();
 }
 function metaText(){
@@ -653,7 +738,7 @@ async function doSave(){
       await Store.set(mk, body);
       if(mm !== month) return true;
       base = sent;
-      if(JSON.stringify(data) === snap) dirty = false; else saveAgain = true;   // 저장 중에 새로 입력한 내용은 이어서 저장
+      if(JSON.stringify(data) === snap){ dirty = false; pendClear(mk); } else { saveAgain = true; pendWrite(); }   // 저장 중에 새로 입력한 내용은 이어서 저장
       cacheWrite(mk, body);
       if(yearCache) yearCache[mm] = data;
       metaText();
@@ -661,11 +746,18 @@ async function doSave(){
       const d = new Date();
       setSaveState('saved', `저장됨 ${pad(d.getHours())}:${pad(d.getMinutes())}`);
       $('saveerr').classList.remove('on');
+      if(offline){ offline = false; clearInterval(retryTimer); }
       verifyLater(seq, mk, body);
       return true;
     }catch(e){ lastErr = e; setSaveState('saving', `저장 재시도 중… (${attempt+1}/2)`); }
   }
   console.error(lastErr);
+  pendWrite();
+  if(navigator.onLine === false || offline){        // 연결이 없을 땐 오류 대신 대기 상태로 두고, 연결되면 자동 전송한다
+    setSaveState('err','오프라인 · 연결되면 자동 저장');
+    showOfflineNote();
+    return false;
+  }
   setSaveState('err','저장 실패 · 눌러서 다시 시도');
   $('autosave').title = String(lastErr && lastErr.message || lastErr);
   showSaveError(lastErr);
@@ -688,14 +780,14 @@ async function verifyLater(seq, mk, body){
 function queueSave(){
   if(!loaded) return;
   if(!dirty && API_URL){ const k = key(month); prefetch = {k, t: Date.now(), p: Store.get(k).catch(() => undefined)}; }
-  dirty = true;
+  dirty = true; pendWrite();
   setSaveState('saving','입력 중…');
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => save(), 400);
 }
 function touch(no, field){
   data[no].seed = false;
-  data[no][(SIDE[field] || 'fac') === 'pm' ? 'atPM' : 'atFac'] = now();
+  data[no][AT_KEY[SIDE[field] || 'fac']] = now();
   queueSave();
 }
 
@@ -729,14 +821,22 @@ function stepsOf(d){
     {st: d.shipStart ? 'done' : 'todo', label: d.shipStart ? '배송 시작' : '배송 전'},
     {st: d.status==='none' ? 'todo' : (iss ? 'flag' : 'done'),
      label: d.status==='none' ? '수령 대기' : STATUS_LABEL[d.status] + (d.issue ? ' · 이슈' : '')},
-    iss ? {st: d.pmNote.trim() ? 'done' : 'warn', label: d.pmNote.trim() ? '조치 완료' : '조치 대기'}
-        : (okNoIssue ? {st:'done', label:'해당 없음'} : {st:'todo', label:'수령 확인 후'}),
+    iss ? {st: d.pmNote.trim() ? 'done' : 'warn', label: d.pmNote.trim() ? '조치 완료' + (d.ackWV ? ' · 월드비전 확인' : '') : '조치 대기'}
+        : (okNoIssue ? {st:'done', label: d.ackWV ? '월드비전 확인' : '해당 없음'} : {st:'todo', label:'수령 확인 후'}),
     iss ? {st: d.resolved ? 'done' : 'warn', label: d.resolved ? '해결 완료' : '해결 대기'}
         : (okNoIssue ? {st:'done', label:'해당 없음'} : {st:'todo', label:'수령 확인 후'})
   ];
 }
 const stepsHTML = d => stepsOf(d).map((s,i) =>
   `<span class="step" data-st="${s.st}"><i>${s.st==='done'?'✓':i+1}</i>${s.label}</span>`).join('');
+const wvStamp = d => d.ackWV && d.atWV ? esc(d.atWV + ' 확인') : '';
+function photosHTML(d){
+  if(!Features.photos && !d.photos.length) return '';
+  const th = d.photos.map((p,i) => `<span class="ph"><a href="https://drive.google.com/file/d/${p.id}/view" target="_blank" rel="noopener"><img src="https://drive.google.com/thumbnail?id=${p.id}&amp;sz=w240" alt="${esc(p.name || '첨부 사진')}" loading="lazy"></a><button type="button" class="phx" data-act="photoDel" data-i="${i}" aria-label="사진 연결 삭제">×</button></span>`).join('');
+  const add = (Features.photos && d.photos.length < PHOTO_MAX)
+    ? `<label class="btn photo-add">사진 추가<input type="file" accept="image/*" multiple data-act="photoAdd" hidden></label>` : '';
+  return `<label>사진 (파손·누수 등, 최대 ${PHOTO_MAX}장)</label><div class="photos">${th}${add}</div>`;
+}
 const needText = d => d.issue
   ? '배송이슈 등록됨 · 풀무원샘물 회신 대기'
   : '부분수령·미수령입니다. 이슈 유형을 선택해 주세요 · 풀무원샘물 회신 대기';
@@ -795,8 +895,9 @@ function render(){
           <div class="f">
             <label for="in-${n}">상세 내용</label>
             <textarea id="in-${n}" data-act="issueNote"
-              placeholder="예: 15일 배송분 중 2BOX 외부 포장 젖음, 8BOX만 수령">${esc(d.issueNote)}</textarea>
+              maxlength="${TEXT_MAX}" placeholder="예: 15일 배송분 중 2BOX 외부 포장 젖음, 8BOX만 수령">${esc(d.issueNote)}</textarea>
           </div>
+          <div class="f" data-photos>${photosHTML(d)}</div>
         </div>
 
         <div class="panel pm">
@@ -804,8 +905,13 @@ function render(){
           <div class="f">
             <label for="pn-${n}">이슈 확인 결과 및 조치 계획</label>
             <textarea id="pn-${n}" data-act="pmNote" style="min-height:151px"
-              placeholder="예: 파손 2BOX 확인, 20일 재배송 예정 / 물류사에 포장 개선 요청">${esc(d.pmNote)}</textarea>
+              maxlength="${TEXT_MAX}" placeholder="예: 파손 2BOX 확인, 20일 재배송 예정 / 물류사에 포장 개선 요청">${esc(d.pmNote)}</textarea>
             <div class="need" data-need>${needText(d)}</div>
+          </div>
+          <div class="f">
+            <label class="ack wv ${d.ackWV?'on':''}">
+              <input type="checkbox" data-act="ackWV" ${d.ackWV?'checked':''}> 월드비전 확인
+            </label><span class="subtime" data-wvstamp>${wvStamp(d)}</span>
           </div>
         </div>
 
@@ -823,7 +929,7 @@ function render(){
           <div class="f">
             <label for="rn-${n}">해결 결과 (재배송 수령 등)</label>
             <textarea id="rn-${n}" data-act="resolveNote" style="min-height:96px"
-              placeholder="이슈가 없으면 비워두셔도 됩니다. 예: 20일 재배송 2BOX 수령 완료">${esc(d.resolveNote)}</textarea>
+              maxlength="${TEXT_MAX}" placeholder="이슈가 없으면 비워두셔도 됩니다. 예: 20일 재배송 2BOX 수령 완료">${esc(d.resolveNote)}</textarea>
           </div>
         </div>
       </div>
@@ -858,6 +964,10 @@ function bindRows(){
   $('list').querySelectorAll('.row').forEach(row => {
     const no = row.dataset.no;
     row.addEventListener('click', e => {
+      const x = e.target.closest('button[data-act="photoDel"]');
+      if(x && loaded){
+        data[no].photos.splice(+x.dataset.i, 1); touch(no,'photos'); refreshPhotos(row,no); afterEdit(row,no); return;
+      }
       const b = e.target.closest('button[data-act="status"]'); if(!b || !loaded) return;
       const d = data[no];
       d.status = (d.status === b.dataset.v) ? 'none' : b.dataset.v;
@@ -872,6 +982,7 @@ function bindRows(){
     row.addEventListener('change', e => {
       const el = e.target.closest('[data-act]'); if(!el || el.tagName==='BUTTON' || !loaded) return;
       const k = el.dataset.act;
+      if(k === 'photoAdd'){ uploadPhotos(row, no, el.files); el.value = ''; return; }
       if(el.type === 'checkbox'){
         data[no][k] = el.checked;
         el.closest('.ack').classList.toggle('on', el.checked);
@@ -904,12 +1015,13 @@ function needFlag(row, d){
 }
 function afterEdit(row,no){
   const st = row.querySelector('[data-steps]'); if(st) st.innerHTML = stepsHTML(data[no]);
+  const ws = row.querySelector('[data-wvstamp]'); if(ws) ws.innerHTML = wvStamp(data[no]);
   needFlag(row, data[no]);
   refresh();
 }
 
 function refresh(){
-  let done=0, issue=0, wait=0, ship=0, res=0;
+  let done=0, issue=0, wait=0, ship=0, res=0, wv=0;
   let opts = `<option value="">▼ 기관을 선택하세요 (${FACILITIES.length}개)</option>`;
   FACILITIES.forEach(f => {
     const d = data[f.no];
@@ -917,6 +1029,7 @@ function refresh(){
     if(hasIssue) issue++;
     if(hasIssue && d.resolved) res++;
     if(d.shipStart) ship++;
+    if(d.ackWV) wv++;
     if(d.status==='done') done++;
     if(d.status==='none') wait++;
     opts += `<option value="${f.no}" ${selNo===f.no?'selected':''}>${f.no}. ${esc(f.name)}</option>`;
@@ -926,6 +1039,9 @@ function refresh(){
   $('cDone').textContent = done; $('cIssue').textContent = issue;
   $('cWait').textContent = wait;
   $('cShip').textContent = ship; $('cRes').textContent = res + '/' + issue;
+  $('cWV').textContent = wv + '/' + FACILITIES.length;
+  if($('report').classList.contains('on') && loaded) drawReport();
+  renderAlerts();
   syncBulkLabels();
   applyFilter();
 }
@@ -957,6 +1073,133 @@ function applyFilter(){
   $('pickSum').textContent = all ? (only ? '이슈·미확인 기관만 보는 중' : '전체 기관을 한꺼번에 보는 중') : (sel ? `${sel.name} 상세 기록` : '');
   syncToggleAll();
 }
+
+/* ── 사진 첨부 (Apps Script 가 지원을 알려올 때만 켜진다) ── */
+function refreshPhotos(row, no){
+  const box = row.querySelector('[data-photos]'); if(box) box.innerHTML = photosHTML(data[no]);
+}
+async function probeFeatures(){
+  if(!API_URL) return;
+  try{
+    const r = await fetch(`${API_URL}?action=features&t=${Date.now()}`);
+    const t = await r.text(); if(t.trim().charAt(0) === '<') return;
+    const j = JSON.parse(t);
+    if(j && j.features && j.features.photos === true && !Features.photos){
+      Features.photos = true; if(loaded) softRender();
+    }
+  }catch(e){}
+}
+async function shrinkImage(file){                  // 긴 변 1280px, JPEG 로 줄여서 올린다
+  const bmp = await createImageBitmap(file);
+  const sc = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(bmp.width * sc); cv.height = Math.round(bmp.height * sc);
+  cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+  return await new Promise((ok, no) => cv.toBlob(b => b ? ok(b) : no(new Error('이미지 변환 실패')), 'image/jpeg', 0.72));
+}
+const blobToB64 = b => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = no; r.readAsDataURL(b); });
+async function uploadPhotos(row, no, files){
+  if(!Features.photos || !loaded) return;
+  const d = data[no], list = [...files].filter(f => /^image\//.test(f.type)).slice(0, PHOTO_MAX - d.photos.length);
+  for(const f of list){
+    try{
+      toast('사진을 올리는 중…');
+      const b64 = await blobToB64(await shrinkImage(f));
+      const r = await fetch(API_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'upload', key:key(month), no:+no, name:f.name.slice(0,60), mime:'image/jpeg', data:b64})});
+      const j = await r.json();
+      if(!j || !j.ok || !PHOTO_ID.test(j.id)) throw new Error((j && j.error) || '업로드 실패');
+      data[no].photos.push({id:j.id, name:txt(f.name, 60), at:now()});
+      touch(no,'photos');
+    }catch(e){ console.error(e); toast('사진을 올리지 못했습니다. 잠시 후 다시 시도해 주세요.'); }
+  }
+  refreshPhotos(row, no); afterEdit(row, no);
+}
+
+/* ── 확인 필요 알림 (다음 단계가 지연된 기관) ── */
+function dayDiff(iso){
+  if(!isDate(iso)) return null;
+  const [y,m,d] = iso.split('-').map(Number), t = new Date();
+  return Math.floor((new Date(t.getFullYear(), t.getMonth(), t.getDate()) - new Date(y, m-1, d)) / 86400000);
+}
+function alertsOf(){
+  const out = [];
+  FACILITIES.forEach(f => {
+    const d = data[f.no]; if(!d) return;
+    const iss = hasIssueOf(d);
+    if(d.shipStart && d.status === 'none'){
+      const n = dayDiff(d.shipDate);
+      if(n !== null && n >= ALERT_DAYS.recv) out.push({no:f.no, lv:'warn', t:`배송 시작 ${n}일째 수령 확인 없음`});
+    }
+    if(iss && !d.pmNote.trim()){
+      const n = dayDiff((d.atFac || '').slice(0,10));
+      if(n !== null && n >= ALERT_DAYS.reply) out.push({no:f.no, lv:'bad', t:`이슈 등록 ${n}일째 조치 회신 없음`});
+    }
+    if(iss && d.pmNote.trim() && !d.resolved){
+      const n = dayDiff((d.atPM || '').slice(0,10));
+      if(n !== null && n >= ALERT_DAYS.resolve) out.push({no:f.no, lv:'warn', t:`조치 회신 ${n}일째 해결 확인 없음`});
+    }
+  });
+  return out;
+}
+function renderAlerts(){
+  const el = $('alerts'), a = alertsOf();
+  if(!a.length){ el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = `<b>확인 필요 ${a.length}건</b><ul>` + a.map(x =>
+    `<li><button type="button" class="alink" data-no="${x.no}" data-lv="${x.lv}">${x.no}. ${esc(FACILITIES.find(f => f.no === x.no).name)} · ${esc(x.t)}</button></li>`).join('') + '</ul>';
+}
+$('alerts').addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.alink'); if(!b) return;
+  $('list').dataset.all = ''; $('onlyIssue').checked = false; selectFac(+b.dataset.no);
+});
+
+/* ── 월 마감 리포트 ── */
+const avgOf = a => a.length ? Math.round(a.reduce((x,y) => x + y, 0) / a.length * 10) / 10 : null;
+const gapDays = (a, b) => (isDate(a) && isDate(b)) ? Math.round((new Date(b) - new Date(a)) / 86400000) : null;
+function drawReport(){
+  if(!loaded){ $('reportBody').textContent = '불러오는 중입니다…'; return; }
+  const rows = FACILITIES.map(f => ({f, d:data[f.no]}));
+  const n = rows.length, cnt = s => rows.filter(r => r.d.status === s).length;
+  const done = cnt('done'), part = cnt('part'), miss = cnt('miss'), none = cnt('none');
+  const iss = rows.filter(r => hasIssueOf(r.d)), replied = iss.filter(r => r.d.pmNote.trim()), solved = iss.filter(r => r.d.resolved);
+  const ship = avgOf(rows.map(r => gapDays(r.d.shipDate, r.d.recvDate)).filter(v => v !== null && v >= 0));
+  const fix = avgOf(solved.map(r => gapDays(r.d.recvDate, r.d.resolveDate)).filter(v => v !== null && v >= 0));
+  const types = {}; iss.forEach(r => { const t = r.d.issue || '유형 미입력'; types[t] = (types[t] || 0) + 1; });
+  const kp = (v, l) => `<div class="kpi"><b>${v}</b><span>${l}</span></div>`;
+  const pct = x => Math.round(x / n * 100) + '%';
+  $('reportTitle').textContent = `${YEAR}년 ${month}월 마감 리포트`;
+  $('reportBody').innerHTML = `
+    <div class="kpis">
+      ${kp(`${done}/${n} (${pct(done)})`, '수령완료율')}
+      ${kp(`${rows.filter(r => r.d.shipStart).length}/${n}`, '배송 시작')}
+      ${kp(ship === null ? '-' : ship + '일', '평균 배송 소요(시작→수령)')}
+      ${kp(`${iss.length}건`, '배송이슈(부분·미수령 포함)')}
+      ${kp(`${replied.length}/${iss.length}`, '조치 회신')}
+      ${kp(`${solved.length}/${iss.length}`, '이슈 해결')}
+      ${kp(fix === null ? '-' : fix + '일', '평균 해결 소요(수령→해결)')}
+      ${kp(`${rows.filter(r => r.d.ackWV).length}/${n}`, '월드비전 확인')}
+    </div>
+    <p class="meta">수령완료 ${done} · 부분수령 ${part} · 미수령 ${miss} · 미확인 ${none}</p>
+    <h3>이슈 유형별</h3>
+    <p class="meta">${Object.keys(types).length ? Object.entries(types).map(([t,c]) => esc(t) + ' ' + c + '건').join(' · ') : '등록된 이슈가 없습니다.'}</p>
+    <h3>기관별 현황</h3>
+    <div class="yscroll"><table class="rtable"><thead><tr><th>기관</th><th>수령</th><th>수령일</th><th>이슈</th><th>조치</th><th>해결</th><th>월드비전</th></tr></thead><tbody>
+    ${rows.map(({f,d}) => `<tr><td>${f.no}. ${esc(f.name)}</td><td>${STATUS_LABEL[d.status]}</td><td>${esc(d.recvDate || '-')}</td>
+      <td>${esc(d.issue || (hasIssueOf(d) ? '유형 미입력' : '-'))}</td><td>${hasIssueOf(d) ? (d.pmNote.trim() ? '회신' : '대기') : '-'}</td>
+      <td>${hasIssueOf(d) ? (d.resolved ? '해결' : '대기') : '-'}</td><td>${d.ackWV ? '확인' : '-'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+$('btnReport').onclick = () => {
+  const box = $('report'), open = box.classList.toggle('on');
+  $('btnReport').textContent = open ? '리포트 닫기' : '월 마감 리포트';
+  if(open){ drawReport(); box.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+};
+$('btnReportPrint').onclick = () => {
+  document.body.classList.add('print-report');
+  const off = () => { document.body.classList.remove('print-report'); window.removeEventListener('afterprint', off); };
+  window.addEventListener('afterprint', off); window.print();
+};
 
 async function loadYear(){
   $('yearNote').textContent = '월별 기록을 불러오는 중…';
@@ -1010,10 +1253,10 @@ function drawYear(){
 
 function csv(){
   if(!loaded){ toast('불러오는 중입니다. 잠시 후 다시 눌러 주세요.'); return; }
-  const head = ['순번','기관명','신청BOX','신청낱개','수령여부','수령일','배송이슈유형','이슈내용(시설)','조치의견(풀무원샘물)','시설입력일시','풀무원샘물입력일시','배송시작','배송시작일','시설문제해결','해결일','해결내용'];
+  const head = ['순번','기관명','신청BOX','신청낱개','수령여부','수령일','배송이슈유형','이슈내용(시설)','조치의견(풀무원샘물)','시설입력일시','풀무원샘물입력일시','배송시작','배송시작일','시설문제해결','해결일','해결내용','월드비전확인','월드비전확인일시','첨부사진수'];
   const rows = FACILITIES.map(f => { const d = data[f.no];
     return [f.no,f.name,f.box,f.ea,STATUS_LABEL[d.status],d.recvDate||'미기재',d.issue||'이슈 없음',
-            d.issueNote,d.pmNote,d.atFac,d.atPM,d.shipStart?'시작':'',d.shipDate,d.resolved?'해결':'',d.resolveDate,d.resolveNote]; });
+            d.issueNote,d.pmNote,d.atFac,d.atPM,d.shipStart?'시작':'',d.shipDate,d.resolved?'해결':'',d.resolveDate,d.resolveNote,d.ackWV?'확인':'',d.atWV,d.photos.length]; });
   /* 엑셀이 = + - @ 로 시작하는 글자를 수식으로 실행하지 않도록 앞에 ' 를 붙인다 */
   const safe = v => { const s = String(v ?? ''); return /^[=+\-@\t\r]/.test(s) ? "'" + s : s; };
   const esc2 = v => `"${safe(v).replace(/"/g,'""')}"`;
@@ -1053,7 +1296,7 @@ function bulkShip(){
     d.shipStart = to; d.seed = false; d.atPM = stamp;
     d.shipDate = to ? day : '';
   });
-  dirty = true; render(); save();
+  dirty = true; pendWrite(); render(); save();
   toast(to ? `${n}개 기관을 배송 시작 처리했습니다 (${fmtDay(day)})` : `${n}개 기관의 배송 시작을 해제했습니다`);
 }
 
@@ -1124,6 +1367,21 @@ function showLoadError(err){
     + '<br><button class="btn" data-retry type="button">다시 불러오기</button>';
   box.classList.add('on');
 }
+function showOfflineNote(){
+  const box = $('saveerr');
+  if(box === NOOP_EL) return;
+  box.innerHTML = '<b>연결할 수 없어 이 기기에 저장된 내용으로 열었습니다.</b> 입력은 기기에 보관되고, 연결되면 자동으로 전송됩니다.'
+    + '<br><button class="btn" data-retry type="button">지금 다시 연결</button>';
+  box.classList.add('on');
+}
+function startRetry(){
+  clearInterval(retryTimer);
+  retryTimer = setInterval(() => { if(offline && !savingP && !typingNow() && navigator.onLine !== false) loadMonth(); }, 20000);
+}
+window.addEventListener('online', () => {
+  if(dirty && loaded) save();                      // 보류된 입력부터 올린다 (서버 최신본과 병합)
+  else if(offline && !typingNow()) loadMonth();
+});
 function showFatal(err){
   const box = document.createElement('div');
   box.style.cssText = 'margin:18px 0;padding:14px 16px;border-radius:6px;background:#FCF2F2;'
@@ -1135,6 +1393,9 @@ function showFatal(err){
   if(wrap) wrap.prepend(box); else document.body.prepend(box);
 }
 
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 try{
   buildMonths();
   loadMonth();
