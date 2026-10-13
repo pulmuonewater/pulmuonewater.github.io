@@ -1,10 +1,13 @@
+<!doctype html>
+<html lang="ko">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>생수 정기배송 수령 확인 | 월드비전 × 풀무원샘물</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
   :root{ 
-    --ink:#10242E; --ink-soft:#5B7280; --ink-faint:#8FA3AC;
+    --ink:#10242E; --ink-soft:#5B7280; --ink-faint:#687D87;
     --line:#DCE5E8; --line-soft:#EAF0F2;
     --paper:#EDF3F5; --card:#FFFFFF;
     --spring:#5E9E1F; --spring-deep:#3D7211; --spring-wash:#F3F9EA; --spring-line:#D8EABE;
@@ -43,7 +46,7 @@
   .months button{flex:0 0 auto;background:transparent;border:0;border-bottom:3px solid transparent;
     color:rgba(255,255,255,.66);font:inherit;font-weight:500;padding:9px 16px 8px;cursor:pointer;border-radius:4px 4px 0 0}
   .months button:hover{color:#fff;background:rgba(255,255,255,.10)}
-  .months button[aria-current="true"]{color:var(--ink);background:var(--paper);border-bottom-color:var(--paper);font-weight:700}
+  .months button[aria-current="page"]{color:var(--ink);background:var(--paper);border-bottom-color:var(--paper);font-weight:700}
 
   .board{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-top:22px}
   .board-head{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;
@@ -53,7 +56,8 @@
   .counts{display:flex;gap:22px}
   .counts div{min-width:56px;text-align:right}
   .counts b{display:block;font-size:23px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
-  .counts span{font-size:11.5px;color:var(--ink-soft)}
+  .counts span{font-size:12px;color:var(--ink-soft);white-space:nowrap}
+  .meta-faint{color:var(--ink-faint)}
   .c-done b{color:var(--ok)} .c-issue b{color:var(--bad)} .c-wait b{color:var(--ink-faint)}
   .c-ship b{color:var(--wv)} .c-res b{color:var(--fac)}
 
@@ -68,8 +72,6 @@
   .btn{background:#fff;border:1px solid var(--line);color:var(--ink);font:inherit;font-size:12.5px;
     padding:7px 13px;border-radius:5px;cursor:pointer;white-space:nowrap}
   .btn:hover{border-color:var(--spring);color:var(--spring)}
-  .btn-wv{border-color:#F2C2AE;color:var(--wv-ink);background:#FFF7F4}
-  .btn-wv:hover{background:var(--wv);border-color:var(--wv);color:#fff}
   .btn-pm{border-color:var(--spring-line);color:var(--spring-deep);background:var(--spring-wash)}
   .btn-pm:hover{background:var(--spring);border-color:var(--spring);color:#fff}
   .btn-bulk{min-width:138px;font-weight:600}
@@ -84,19 +86,20 @@
   .autosave.saved::before{background:var(--ok)}
   .autosave.err{color:var(--bad);border-color:var(--bad);cursor:pointer}
   .autosave.err::before{background:var(--bad)}
-  .btn-solid{background:var(--spring);border-color:var(--spring);color:#fff}
-  .btn-solid:hover{background:var(--spring-deep);border-color:var(--spring-deep);color:#fff}
 
   .year{background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-top:10px;padding:18px 20px;display:none}
   .year.on{display:block}
   .year h2{margin:0 0 4px;font-size:15px;font-weight:700;letter-spacing:-.02em}
   .year p{margin:0 0 14px;font-size:12.5px;color:var(--ink-soft)}
+  .yscroll{overflow-x:auto}
   .ytable{width:100%;border-collapse:collapse;font-size:12.5px}
   .ytable th,.ytable td{border-bottom:1px solid var(--line-soft);padding:8px 4px;text-align:center}
-  .ytable th:first-child,.ytable td:first-child{text-align:left;padding-left:2px;white-space:nowrap;font-weight:600}
-  .ytable thead th{color:var(--ink-faint);font-weight:600;font-size:11.5px;border-bottom:1px solid var(--line)}
+  .ytable th:first-child,.ytable td:first-child{text-align:left;padding-left:2px;white-space:nowrap;font-weight:600;position:sticky;left:0;background:var(--card);z-index:1}
+  .ytable thead th{color:var(--ink-faint);font-weight:600;font-size:12px;border-bottom:1px solid var(--line)}
   .ytable td.cur{background:var(--spring-wash)}
-  .dot{display:inline-block;width:15px;height:15px;border-radius:50%;background:#E7EDEF}
+  .dot{display:inline-block;width:17px;height:17px;border-radius:50%;background:#E7EDEF;vertical-align:middle}
+  .dot[data-s]::after{display:block;text-align:center;color:#fff;font-size:11px;font-weight:700;line-height:17px;font-style:normal}
+  .dot[data-s="done"]::after{content:"✓"} .dot[data-s="part"]::after{content:"△"} .dot[data-s="miss"]::after{content:"✕"}
   .dot[data-s="done"]{background:var(--ok)}
   .dot[data-s="part"]{background:var(--warn)}
   .dot[data-s="miss"]{background:var(--bad)}
@@ -120,31 +123,33 @@
   .row[data-s="part"]{border-left-color:var(--warn)}
   .row[data-s="miss"]{border-left-color:var(--bad)}
   .row.hide{display:none}
-  .row.flash{box-shadow:0 0 0 3px rgba(11,110,143,.25)}
 
   .rhead{display:flex;flex-wrap:wrap;align-items:center;gap:14px 20px;
     padding:13px 20px;border-bottom:1px solid var(--line-soft);background:#FBFDFD}
   .notice{margin:0;padding:10px 20px;background:#FFF6E8;border-bottom:1px solid #F0D9AE;color:#8A5A12;font-size:12.5px;line-height:1.6}
   .notice b{font-weight:700}
-  .notice b:first-child{display:inline-block;margin-right:8px;padding:1px 7px;border-radius:3px;background:#fff;border:1px solid #F0D9AE;font-size:11.5px}
+  .notice b:first-child{display:inline-block;margin-right:8px;padding:1px 7px;border-radius:3px;background:#fff;border:1px solid #F0D9AE;font-size:12px}
   .picker{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:14px 20px 16px}
   .picker label{font-weight:700;font-size:13px}
   .picker select{width:auto;min-width:280px;max-width:100%;font-size:14px;font-weight:600;padding:10px 12px;border-color:var(--spring)}
   .picker-sum{font-size:12.5px;color:var(--ink-soft)}
+  .list.locked{opacity:.55;pointer-events:none}
+  :focus-visible{outline:2px solid var(--spring);outline-offset:2px}
+  header :focus-visible{outline-color:#fff}
+  .localnote .btn{margin-top:8px}
   .list .row{display:none}
   .list.all .row:not(.hide){display:block}
   .list:not(.all) .row.sel{display:block}
   .steps{display:flex;gap:4px 14px;flex-wrap:wrap;margin-left:auto}
-  .step{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--ink-faint);white-space:nowrap}
+  .step{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-faint);white-space:nowrap}
   .step i{width:19px;height:19px;border-radius:50%;display:inline-grid;place-items:center;font-style:normal;
-    font-size:10.5px;font-weight:700;background:#E7EDEF;color:#fff;flex:0 0 auto}
+    font-size:11px;font-weight:700;background:#E7EDEF;color:#fff;flex:0 0 auto}
   .step[data-st="done"]{color:var(--ok)} .step[data-st="done"] i{background:var(--ok)}
   .step[data-st="flag"]{color:var(--bad)} .step[data-st="flag"] i{background:var(--bad)}
   .step[data-st="warn"]{color:var(--warn)} .step[data-st="warn"] i{background:var(--warn)}
   .step[data-st="na"] i{background:#fff;border:1px dashed var(--ink-faint);color:var(--ink-faint)}
   .pn{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;background:var(--ink);
     color:#fff;font-size:11px;font-weight:700;margin-right:7px}
-  .panel.wvp{background:var(--wv-wash);border-color:#F6CDBB}
   .okline{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .okline .ack{font-size:13px}
   .shipall{display:flex;gap:6px;margin-top:11px}
@@ -156,7 +161,7 @@
   .rqty{font-size:12.5px;color:var(--ink-soft);white-space:nowrap}
   .rstate{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 20px 0}
   .fieldline{display:flex;align-items:center;gap:9px;white-space:nowrap}
-  .fieldline > span{font-size:12px;color:var(--ink-faint);font-weight:600;white-space:nowrap}
+  .fieldline > label,.fieldline > span{font-size:12px;color:var(--ink-faint);font-weight:600;white-space:nowrap}
   .segbtns{display:flex;gap:4px}
   .segbtns button{font:inherit;font-size:12.5px;padding:7px 14px;background:#fff;
     border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--ink-soft);white-space:nowrap}
@@ -171,30 +176,25 @@
   .rbody{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px 20px 18px}
   .panel{border:1px solid var(--line-soft);border-radius:6px;padding:13px 14px 15px;background:var(--fac-wash)}
   .panel.pm{background:var(--spring-wash);border-color:var(--spring-line)}
-  .panel-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .panel-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 10px;margin-bottom:10px}
   .panel-h b{font-size:12.5px;font-weight:700;letter-spacing:-.02em}
-  .tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10.5px;font-weight:700;white-space:nowrap}
+  .tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:11px;font-weight:700;white-space:nowrap}
   .tag-fac{background:#fff;color:var(--fac);border:1px solid #D5E0E4}
   .tag-pm{background:#fff;color:var(--spring);border:1px solid var(--spring-line)}
-  .f label{display:block;font-size:11.5px;color:var(--ink-faint);font-weight:600;margin-bottom:5px}
+  .f label{display:block;font-size:12px;color:var(--ink-faint);font-weight:600;margin-bottom:5px}
   .f + .f{margin-top:11px}
   select,textarea{font:inherit;width:100%;border:1px solid var(--line);border-radius:5px;
     padding:8px 10px;background:#fff;color:var(--ink);font-size:13px}
   textarea{resize:vertical;min-height:96px;line-height:1.55}
   select:focus,textarea:focus,.dateinput:focus{outline:2px solid var(--spring);outline-offset:1px;border-color:transparent}
   select.has-issue{border-color:var(--bad);color:var(--bad);font-weight:600;background:#FDF3F3}
-  .need{margin-top:7px;font-size:11.5px;color:var(--bad);font-weight:600;display:none}
+  .need{margin-top:7px;font-size:12px;color:var(--bad);font-weight:600;display:none}
   .need.on{display:block}
 
-  .rfoot{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;
-    padding:11px 20px;border-top:1px solid var(--line-soft);background:#FBFDFD}
   .ack{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);cursor:pointer;white-space:nowrap}
   .ack input{width:15px;height:15px}
-  .ack.wv input{accent-color:var(--wv)} .ack.pm input{accent-color:var(--spring)}
-  .ack.wv.on{color:var(--wv-ink);font-weight:600} .ack.pm.on{color:var(--spring);font-weight:600}
-  .stamp{margin-left:auto;color:var(--ink-faint);font-size:11.5px;text-align:right;line-height:1.6}
-  .stamp i{font-style:normal;color:var(--ink-soft);font-weight:600}
-  .stamp em{font-style:normal;color:var(--line);margin:0 7px}
+  .ack.pm input{accent-color:var(--spring)}
+  .ack.pm.on{color:var(--spring-deep);font-weight:600}
 
   .empty{background:var(--card);border:1px dashed var(--line);border-radius:var(--r);
     padding:36px;text-align:center;color:var(--ink-soft)}
@@ -209,7 +209,6 @@
     .steps{margin-left:0;width:100%}
     .rstate{margin-left:0;width:100%}
     .segbtns button{flex:1}
-    .stamp{margin-left:0;text-align:left;width:100%}
     h1{font-size:23px}
     .picker select{min-width:0;width:100%}
     .counts{width:100%;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
@@ -230,17 +229,28 @@
     .tools .btn{flex:1 1 auto}
     .wrap{padding:0 14px 60px}
     .head-in{padding:18px 14px 0}
-    .ytable{font-size:11.5px}
+    .ytable{font-size:12px}
+    .shipall .btn-bulk{flex:1 1 100%}
+    .btn,.segbtns button,.months button{min-height:44px}
+    .chk,.ack{min-height:44px;padding:6px 0}
+    .chk input,.ack input{width:20px;height:20px}
+    .dateinput{min-height:44px}
+    select{min-height:44px}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
   @media print{
-    header{background:#fff;color:#000}
-    .months,.tools,.toast{display:none}
+    header{background:#fff;color:#000;border-top-color:#999}
+    header *{color:#000!important}
+    .months,.tools,.toast,.roles,.picker,.notice,.localnote,.board-bar,#pickHint,.counts,.year,.autosave{display:none!important}
+    textarea{height:auto;min-height:60px;border:1px solid #ccc}
+    @page{margin:12mm}
     .row{break-inside:avoid;border:1px solid #ccc}
     .list .row:not(.hide){display:block!important}
     body{background:#fff}
   }
 </style>
+</head>
+<body>
 
 <header>
   <div class="head-in">
@@ -255,8 +265,8 @@
   </div>
 </header>
 
-<div class="wrap">
-  <div class="localnote err" id="saveerr"></div>
+<main class="wrap">
+  <div class="localnote err" id="saveerr" role="alert"></div>
 
   <div class="localnote" id="localnote">
     임시 저장 모드입니다. 입력한 내용이 이 브라우저에만 남고 다른 담당자에게는 보이지 않습니다.
@@ -265,7 +275,7 @@
 
   <section class="board">
     <div class="board-head">
-      <div class="board-title">기관별 진행 현황<span>① 배송 시작 → ② 시설 수령/이슈 → ③ 풀무원 확인·조치 → ④ 시설 문제 해결 · 기관을 선택하면 해당 기록이 아래에 열립니다</span></div>
+      <div class="board-title">기관별 진행 현황<span>① 배송 시작 → ② 시설 수령/이슈 → ③ 풀무원샘물 확인·조치 → ④ 시설 문제 해결 · 기관을 선택하면 해당 기록이 아래에 열립니다</span></div>
       <div class="counts">
         <div class="c-ship"><b id="cShip">0</b><span>배송시작</span></div>
         <div class="c-done"><b id="cDone">0</b><span>수령완료</span></div>
@@ -279,8 +289,8 @@
     </div>
     <div class="picker">
       <label for="facSelect">기관 선택</label>
-      <select id="facSelect" aria-label="기관 선택"></select>
-      <span class="picker-sum" id="pickSum"></span>
+      <select id="facSelect"></select>
+      <span class="picker-sum" id="pickSum" aria-live="polite"></span>
     </div>
     <div class="board-bar">
       <div class="meta" id="metaLine">불러오는 중…</div>
@@ -290,21 +300,21 @@
         <button class="btn" id="btnYear">연간 현황 보기</button>
         <button class="btn" id="btnCsv">엑셀(CSV)로 내려받기</button>
         <button class="btn" id="btnPrint">인쇄</button>
-        <span class="autosave" id="autosave">자동 저장</span>
+        <span class="autosave" id="autosave" role="status" aria-live="polite">자동 저장</span>
       </div>
     </div>
   </section>
 
   <section class="year" id="year">
     <h2>2026년 기관별 월간 수령 현황</h2>
-    <p id="yearNote">불러오는 중…</p>
-    <div style="overflow-x:auto"><table class="ytable" id="ytable"></table></div>
+    <p id="yearNote" aria-live="polite">불러오는 중…</p>
+    <div class="yscroll"><table class="ytable" id="ytable"></table></div>
     <div class="legend">
       <span><i class="dot" data-s="done"></i> 수령완료</span>
       <span><i class="dot" data-s="part"></i> 부분수령</span>
       <span><i class="dot" data-s="miss"></i> 미수령</span>
       <span><i class="dot"></i> 미확인</span>
-      <span><i class="dot iss" data-s="done"></i> 테두리 표시는 배송이슈 기록 있음</span>
+      <span><i class="dot iss" data-s="done"></i> 테두리 표시는 배송이슈(부분·미수령 포함) 있음</span>
     </div>
   </section>
 
@@ -327,16 +337,16 @@
     </div>
   </div>
 
-  <div class="list" id="list"></div>
+  <div class="list" id="list" aria-live="off"></div>
   <div class="empty" id="pickHint">위에서 <b>기관을 선택</b>하면 상세 기록이 이곳에 펼쳐집니다.</div>
 
   <footer>
     이 페이지의 입력값은 시설·월드비전·풀무원샘물이 함께 보는 공용 기록으로 저장됩니다. 개인정보나 대외비는 입력하지 마세요.<br>
     원본 대장: 「풀무원 정기배송 확인 SHEET」 구글 시트 · 월 마감 후 CSV로 내려받아 보관하시기 바랍니다.
   </footer>
-</div>
+</main>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 const FACILITIES = [
@@ -355,18 +365,22 @@ const YEAR = 2026;
 const MONTHS = [2,3,4,5,6,7,8,9,10,11,12];
 const ISSUES = ['배송 지연','수량 부족','제품 파손·누수','오배송(타 시설)','부재로 미수령','배송지·연락처 변경','수령처 요청사항','기타'];
 const STATUS_LABEL = {done:'수령완료', part:'부분수령', miss:'미수령', none:'미확인'};
+/* 어느 쪽 담당자가 입력한 항목인지 — 입력 시각(atFac / atPM) 기록에 쓴다 */
 const SIDE = {status:'fac', recvDate:'fac', issue:'fac', issueNote:'fac',
               resolved:'fac', resolveDate:'fac', resolveNote:'fac',
-              shipStart:'pm', shipDate:'pm',
-              pmNote:'pm', ackPM:'pm', ackWV:'wv'};
-const SIDE_LABEL = {fac:'시설 입력', wv:'월드비전 확인', pm:'풀무원샘물 회신'};
+              shipStart:'pm', shipDate:'pm', pmNote:'pm'};
 
 let month = (new Date().getMonth()+1);
-if(!MONTHS.includes(month)) month = 6;
+if(!MONTHS.includes(month)) month = month === 1 ? 2 : 12;
 let data = {};
-let dirty = false, saveTimer = null;
-let yearCache = null;
+let base = {};                     // 마지막으로 서버와 맞춘 시점의 기관별 값 (저장 때 병합 기준)
+let loaded = false;                // 서버에서 최신 값을 확인하기 전에는 편집·저장을 막는다
+let loadSeq = 0;
+let dirty = false, saveTimer = null, savingP = null, saveAgain = false, saveSeq = 0;
+let yearCache = null, yearAt = 0;
 let selNo = null;                  // 드롭다운에서 선택한 기관
+let pendingRender = false;
+let prefetch = null;               // 입력 시작 순간 미리 읽어 둔 서버 값 (저장 속도 단축용)
 
 /* 화면 요소가 없어도 스크립트 전체가 멈추지 않도록 빈 껍데기를 돌려준다 */
 const NOOP_EL = {
@@ -382,10 +396,12 @@ const pad = n => String(n).padStart(2,'0');
 const now = () => { const d=new Date();
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 const today = () => { const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+/* 화면(HTML)에 넣는 모든 사용자 입력은 반드시 esc() 를 거친다 */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const blank = () => ({status:'none', recvDate:'', issue:'', issueNote:'', pmNote:'',
                       shipStart:false, shipDate:'', resolved:false, resolveDate:'', resolveNote:'',
-                      ackWV:false, ackPM:false, atFac:'', atWV:'', atPM:'', seed:false});
-/* 시트에 수령여부만 있고 수령일자가 없는 기간 — 수령완료로 표시, 날짜는 공란 */
+                      atFac:'', atPM:'', seed:false});
 /* ══════════════════════════════════════════════════════════
    월별 수령 실적 기준값
      'all'      → 10개 기관 전부 수령완료
@@ -408,7 +424,7 @@ const RECORDS = {
 
 /* 기준값은 그 달을 처음 여는 순간 한 번만 채워진다.
    한 번 저장된 뒤에는 웹페이지에서 입력한 내용이 항상 우선이며,
-   기준값을 바꾸려면 아래 RECORDS 를 수정한다. */
+   기준값을 바꾸려면 위 RECORDS 를 수정한다. */
 function applyDefaults(m, store){
   const spec = RECORDS[m];
   if(spec === undefined) return false;
@@ -451,11 +467,14 @@ const Store = {
     if(!API_URL){ localStorage.setItem(k, v); return true; }
     const body = JSON.stringify({key:k, value:v});
     const opt = { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:body };
+    let r;
     try{
-      await fetch(API_URL, opt);                       // 일반 전송
+      r = await fetch(API_URL, opt);                   // 일반 전송
     }catch(e){
       await fetch(API_URL, Object.assign({mode:'no-cors'}, opt));   // 차단되면 우회 전송
+      return true;
     }
+    if(!r.ok) throw new Error('서버가 저장을 거부했습니다 (HTTP ' + r.status + ')');
     return true;
   },
 
@@ -480,20 +499,31 @@ function fmtDay(iso){
   if(p.length !== 3) return iso;
   const d = new Date(+p[0], +p[1]-1, +p[2]);
   const wd = ['일','월','화','수','목','금','토'][d.getDay()];
-  return `${+p[1]}월 ${+p[2]}일(${wd})`;
+  return `${+p[0]}년 ${+p[1]}월 ${+p[2]}일(${wd})`;
 }
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on');
-  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),1900); }
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),2400); }
 
+/* 시트·캐시에서 읽은 값은 형식을 검사해서 받는다 (변조·오입력 방어) */
+const isDate = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+const txt = (v, n) => (typeof v === 'string' ? v : (v == null ? '' : String(v))).slice(0, n || 5000);
 function migrate(d){
   const b = blank();
-  if(!d) return b;
-  Object.keys(b).forEach(k => { if(d[k]!==undefined) b[k]=d[k]; });
-  if(!b.pmNote && d.comment) b.pmNote = d.comment;
-  if(d.action) b.issueNote = (b.issueNote ? b.issueNote+'\n' : '') + '[기존 조치사항] ' + d.action;
-  if(d.ack) b.ackPM = true;
-  if(d.shipStart === undefined && b.status !== 'none') b.shipStart = true;   // 기존 기록: 수령했다면 배송은 시작된 것
-  if(!b.atFac && d.at) b.atFac = d.at;
+  if(!d || typeof d !== 'object') return b;
+  b.status = ['none','done','part','miss'].includes(d.status) ? d.status : 'none';
+  b.recvDate = isDate(d.recvDate) ? d.recvDate : '';
+  b.shipDate = isDate(d.shipDate) ? d.shipDate : '';
+  b.resolveDate = isDate(d.resolveDate) ? d.resolveDate : '';
+  b.issue = txt(d.issue, 60);
+  b.issueNote = txt(d.issueNote);
+  b.pmNote = txt(d.pmNote) || txt(d.comment);
+  if(d.action) b.issueNote = (b.issueNote ? b.issueNote+'\n' : '') + '[기존 조치사항] ' + txt(d.action);
+  b.shipStart = d.shipStart === undefined ? b.status !== 'none' : d.shipStart === true;   // 기존 기록: 수령했다면 배송은 시작된 것
+  b.resolved = d.resolved === true;
+  b.resolveNote = txt(d.resolveNote);
+  b.atFac = txt(d.atFac || d.at, 30);
+  b.atPM = txt(d.atPM, 30);
+  b.seed = d.seed === true;
   return b;
 }
 
@@ -503,90 +533,143 @@ function cacheWrite(k, v){ try{ localStorage.setItem(cacheKey(k), v); }catch(e){
 function cacheRead(k){ try{ return localStorage.getItem(cacheKey(k)); }catch(e){ return null; } }
 function rowsOf(text){
   const j = JSON.parse(text);
-  return (j && j.rows) ? j.rows : (j || {});
+  const r = (j && j.rows) ? j.rows : (j || {});
+  return (r && typeof r === 'object') ? r : {};
 }
+const rowsFrom = raw => { const o = {}; FACILITIES.forEach(f => { o[f.no] = migrate(raw[f.no]); }); return o; };
+const snapshot = rows => { const o = {}; FACILITIES.forEach(f => { o[f.no] = JSON.stringify(rows[f.no]); }); return o; };
+
+function setLoaded(v){
+  loaded = v;
+  $('list').classList.toggle('locked', !v);
+  $('list').setAttribute('aria-busy', String(!v));
+}
+
 async function loadMonth(){
-  const m = month, k = key(m);
-  data = {};
-  let shown = null;
+  const m = month, k = key(m), my = ++loadSeq;
+  setLoaded(false);
+  dirty = false; pendingRender = false;
+  $('saveerr').classList.remove('on');
+  data = rowsFrom({});
   const c = cacheRead(k);
+  let shown = false;
   if(c){
-    try{
-      const raw = rowsOf(c);
-      FACILITIES.forEach(f => { data[f.no] = migrate(raw[f.no]); });
-      shown = JSON.stringify(data);
-      render(); metaText(); setSaveState('', '최신 확인 중…');
-    }catch(e){ data = {}; }
+    try{ data = rowsFrom(rowsOf(c)); shown = true; }catch(e){}
   }
+  render(); metaText();
+  setSaveState('', shown ? '최신 내용 확인 중…' : '불러오는 중…');
   if(!shown) $('metaLine').textContent = '불러오는 중…';
-  let raw = {}, stored = false, fetched = false;
+
+  let r;
   try{
-    const r = await Store.get(k);
-    fetched = true;
-    if(r && r.value){
-      raw = rowsOf(r.value);
-      stored = Object.keys(raw).length > 0;
-      if(stored) cacheWrite(k, r.value);
-    }
-  }catch(e){}
-  if(m !== month) return;                       // 기다리는 사이 다른 달로 이동함
-  if(!fetched && shown){ setSaveState('', '저장된 화면 표시 중'); startPoll(); return; }
-  if(dirty && shown) { startPoll(); return; }   // 불러오는 동안 입력했다면 덮어쓰지 않는다
-  const fresh = {};
-  FACILITIES.forEach(f => { fresh[f.no] = migrate(raw[f.no]); });
-  const seeded = stored ? false : applyDefaults(m, fresh);
-  if(JSON.stringify(fresh) !== shown){
-    data = fresh;
-    render(); metaText();
+    r = await Store.get(k);
+  }catch(e){
+    if(m !== month || my !== loadSeq) return;
+    console.error(e);
+    setSaveState('err', '불러오기 실패');
+    showLoadError(e);                              // 서버 값을 모르는 채로는 편집·저장하지 않는다
+    return;
   }
+  if(m !== month || my !== loadSeq) return;        // 기다리는 사이 다른 달로 이동함
+  let raw = {}, stored = false;
+  if(r && r.value){
+    try{ raw = rowsOf(r.value); stored = Object.keys(raw).length > 0; }catch(e){}
+    if(stored) cacheWrite(k, r.value);
+  }
+  data = rowsFrom(raw);
+  const seeded = stored ? false : applyDefaults(m, data);
+  base = snapshot(stored ? data : rowsFrom({}));   // 서버에 아직 없는 기준값은 «내가 바꾼 것»으로 취급
+  setLoaded(true);
+  render(); metaText();
   setSaveState(stored ? 'saved' : '', stored ? '불러옴' : '자동 저장');
-  if(seeded) save(true);          // 최초 1회만 기록을 남긴다
+  if(seeded){ dirty = true; save(); }              // 최초 1회만 기록을 남긴다
+  if(yearCache){ yearCache[m] = data; if($('year').classList.contains('on')) drawYear(); }
   startPoll();
 }
 function metaText(){
   const t = [];
-  Object.values(data).forEach(d => { [d.atFac,d.atWV,d.atPM].forEach(x => x && t.push(x)); });
+  Object.values(data).forEach(d => { [d.atFac,d.atPM].forEach(x => x && t.push(x)); });
   t.sort();
+  const nSeed = Object.values(data).filter(d => d.seed && d.status === 'done').length;
   const seeded = Object.values(data).some(d => d.seed);
   $('metaLine').innerHTML = seeded
-    ? `<b>${YEAR}년 ${month}월분</b> · 배송예정 15일경 · <span style="color:var(--ink-faint)">구글 시트 기준 전 기관 수령완료 · 수령일 미기재</span>`
-    : `<b>${YEAR}년 ${month}월분</b> · 배송예정 15일경 · 마지막 기록 ${t.length?t[t.length-1]:'없음'}`;
+    ? `<b>${YEAR}년 ${month}월분</b> · 배송예정 15일경 · <span class="meta-faint">구글 시트 기준 ${nSeed === FACILITIES.length ? '전 기관' : nSeed + '개 기관'} 수령완료 · 수령일 미기재</span>`
+    : `<b>${YEAR}년 ${month}월분</b> · 배송예정 15일경 · 마지막 기록 ${esc(t.length?t[t.length-1]:'없음')}`;
 }
 function setSaveState(cls, text){
   const el = $('autosave');
   el.className = 'autosave' + (cls ? ' '+cls : '');
   el.textContent = text;
+  el.onclick = cls === 'err' ? () => (loaded ? save() : loadMonth()) : null;
 }
-function payload(){ return JSON.stringify({savedAt: now(), rows: data}); }
+function payload(){ return JSON.stringify({savedAt: new Date().toISOString(), rows: data}); }
 
-let saveSeq = 0;
-async function save(silent, attempt){
-  attempt = attempt || 0;
+/* 저장 직전에 서버의 최신 값을 읽어, 내가 바꾸지 않은 칸은 서버 값을 따른다.
+   (다른 담당자가 그 사이 입력한 내용이 내 저장으로 지워지지 않도록) */
+function mergeServer(srvRows){
+  let changed = false;
+  FACILITIES.forEach(f => {
+    const mine = data[f.no], srv = migrate(srvRows[f.no]);
+    let bs; try{ bs = JSON.parse(base[f.no]); }catch(e){ bs = blank(); }
+    const out = {};
+    Object.keys(blank()).forEach(k => {
+      const localChanged = JSON.stringify(mine[k]) !== JSON.stringify(bs[k]);
+      out[k] = localChanged ? mine[k] : srv[k];
+    });
+    if(JSON.stringify(out) !== JSON.stringify(mine)) changed = true;
+    data[f.no] = out;
+  });
+  return changed;
+}
+
+function save(){                                   // → Promise<boolean> (저장 성공 여부)
   clearTimeout(saveTimer);
+  if(!loaded) return Promise.resolve(false);
+  if(savingP){ saveAgain = true; return savingP; }
+  savingP = (async () => {
+    let ok;
+    do{ saveAgain = false; ok = await doSave(); }while(saveAgain && ok);
+    return ok;
+  })().finally(() => { savingP = null; });
+  return savingP;
+}
+async function doSave(){
+  const mm = month, mk = key(mm), seq = ++saveSeq;
   setSaveState('saving','저장 중…');
-  const seq = ++saveSeq, mk = key(month), body = payload(), snap = JSON.stringify(data);
-  try{
-    await Store.set(mk, body);
-    if(JSON.stringify(data) === snap) dirty = false;   // 저장하는 동안 새로 입력했다면 계속 저장 대기
-    metaText(); cacheWrite(mk, body);
-    if(yearCache) yearCache[month] = data;
-    const d = new Date();
-    setSaveState('saved', `저장됨 ${pad(d.getHours())}:${pad(d.getMinutes())}`);
-    $('saveerr').classList.remove('on');
-    verifyLater(seq, mk, body);
-  }catch(e){
-    if(attempt < 2){                       // 통신이 끊겼을 때 자동 재시도
-      setSaveState('saving', `저장 재시도 중… (${attempt+1}/2)`);
-      setTimeout(() => save(true, attempt+1), 1500 * (attempt+1));
-      return;
-    }
-    console.error(e);
-    setSaveState('err','저장 실패 · 눌러서 다시 시도');
-    const el = $('autosave');
-    el.title = String(e && e.message || e);
-    el.onclick = () => save(true);
-    showSaveError(e);
+  let lastErr;
+  for(let attempt = 0; attempt < 3; attempt++){
+    if(attempt) await new Promise(r => setTimeout(r, 1500 * attempt));
+    try{
+      let srv = null;
+      if(API_URL){
+        const pre = (attempt === 0 && prefetch && prefetch.k === mk && Date.now() - prefetch.t < 4000) ? await prefetch.p : undefined;
+        prefetch = null;
+        const r = pre !== undefined ? pre : await Store.get(mk);
+        if(r && r.value) srv = rowsOf(r.value);
+      }
+      if(mm !== month) return false;
+      const changed = srv ? mergeServer(srv) : false;   // 병합과 전송 내용 확정은 끊김 없이 한 번에
+      const body = payload(), snap = JSON.stringify(data), sent = snapshot(data);
+      await Store.set(mk, body);
+      if(mm !== month) return true;
+      base = sent;
+      if(JSON.stringify(data) === snap) dirty = false; else saveAgain = true;   // 저장 중에 새로 입력한 내용은 이어서 저장
+      cacheWrite(mk, body);
+      if(yearCache) yearCache[mm] = data;
+      metaText();
+      if(changed) softRender();
+      const d = new Date();
+      setSaveState('saved', `저장됨 ${pad(d.getHours())}:${pad(d.getMinutes())}`);
+      $('saveerr').classList.remove('on');
+      verifyLater(seq, mk, body);
+      return true;
+    }catch(e){ lastErr = e; setSaveState('saving', `저장 재시도 중… (${attempt+1}/2)`); }
   }
+  console.error(lastErr);
+  setSaveState('err','저장 실패 · 눌러서 다시 시도');
+  $('autosave').title = String(lastErr && lastErr.message || lastErr);
+  showSaveError(lastErr);
+  return false;
 }
 /* 시트에 실제로 기록됐는지 뒤에서 확인한다. 그 사이 새로 저장했다면 확인을 건너뛴다. */
 async function verifyLater(seq, mk, body){
@@ -597,72 +680,76 @@ async function verifyLater(seq, mk, body){
     if(await Store.verify(mk, body)) return;
   }catch(e){ return; }                                  // 확인 통신 실패는 저장 실패로 보지 않는다
   if(seq !== saveSeq) return;
-  const err = new Error('시트에 기록되지 않았습니다. Apps Script를 «새 버전»으로 다시 배포했는지 확인해 주세요.');
+  const err = new Error('시트에 기록되었는지 확인하지 못했습니다. 잠시 후 다시 저장해 보세요. 계속되면 관리자에게 Apps Script 배포 설정 확인을 요청해 주세요.');
   setSaveState('err','저장 확인 실패 · 눌러서 다시 시도');
-  const el = $('autosave'); el.title = err.message; el.onclick = () => save(true);
+  $('autosave').title = err.message;
   showSaveError(err);
 }
 function queueSave(){
+  if(!loaded) return;
+  if(!dirty && API_URL){ const k = key(month); prefetch = {k, t: Date.now(), p: Store.get(k).catch(() => undefined)}; }
   dirty = true;
   setSaveState('saving','입력 중…');
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(()=>save(true), 400);
+  saveTimer = setTimeout(() => save(), 400);
 }
 function touch(no, field){
   data[no].seed = false;
-  const side = SIDE[field] || 'fac';
-  data[no]['at' + (side==='fac'?'Fac':side==='wv'?'WV':'PM')] = now();
+  data[no][(SIDE[field] || 'fac') === 'pm' ? 'atPM' : 'atFac'] = now();
   queueSave();
 }
 
 function buildMonths(){
   $('months').innerHTML = MONTHS.map(m =>
-    `<button data-m="${m}" aria-current="${m===month}">${m}월</button>`).join('');
+    `<button data-m="${m}" ${m===month?'aria-current="page"':''}>${m}월</button>`).join('');
+  focusMonthTab();
   $('months').onclick = async e => {
-    const b = e.target.closest('button'); if(!b) return;
-    if(dirty) await save(true);
+    const b = e.target.closest('button'); if(!b || +b.dataset.m === month) return;
+    if(dirty || savingP){
+      const ok = await save();
+      if(!ok){ toast('저장하지 못해 월을 바꾸지 않았습니다. 저장 후 다시 눌러 주세요.'); return; }
+    }
     month = +b.dataset.m;
-    [...$('months').children].forEach(x => x.setAttribute('aria-current', x===b));
+    [...$('months').children].forEach(x => x === b ? x.setAttribute('aria-current','page') : x.removeAttribute('aria-current'));
+    focusMonthTab();
     loadMonth();
-    if($('year').classList.contains('on')) drawYear();
   };
 }
-
-function stampHTML(d){
-  const p = [];
-  if(d.seed && !d.atFac && !d.atWV && !d.atPM) return '구글 시트 기준 수령완료 · 수령일 미기재';
-  if(d.atFac) p.push(`<i>${SIDE_LABEL.fac}</i> ${d.atFac}`);
-  if(d.atWV)  p.push(`<i>${SIDE_LABEL.wv}</i> ${d.atWV}`);
-  if(d.atPM)  p.push(`<i>${SIDE_LABEL.pm}</i> ${d.atPM}`);
-  return p.length ? p.join('<em>|</em>') : '아직 입력 없음';
+function focusMonthTab(){
+  const el = $('months').querySelector('[aria-current]');
+  if(el && el.scrollIntoView) el.scrollIntoView({inline:'center', block:'nearest'});
 }
 
 const hasIssueOf = d => !!d.issue || d.status==='miss' || d.status==='part';
-/* ① 배송 시작 → ② 시설 수령/이슈 → ③ 풀무원 확인·조치 → ④ 시설 문제 해결 */
+/* ① 배송 시작 → ② 시설 수령/이슈 → ③ 풀무원샘물 확인·조치 → ④ 시설 문제 해결 */
 function stepsOf(d){
   const iss = hasIssueOf(d);
+  const okNoIssue = d.status === 'done';
   return [
     {st: d.shipStart ? 'done' : 'todo', label: d.shipStart ? '배송 시작' : '배송 전'},
     {st: d.status==='none' ? 'todo' : (iss ? 'flag' : 'done'),
      label: d.status==='none' ? '수령 대기' : STATUS_LABEL[d.status] + (d.issue ? ' · 이슈' : '')},
     iss ? {st: d.pmNote.trim() ? 'done' : 'warn', label: d.pmNote.trim() ? '조치 완료' : '조치 대기'}
-        : {st: d.ackPM ? 'done' : 'todo', label: d.ackPM ? '확인 완료' : '확인 대기'},
+        : (okNoIssue ? {st:'done', label:'해당 없음'} : {st:'todo', label:'수령 확인 후'}),
     iss ? {st: d.resolved ? 'done' : 'warn', label: d.resolved ? '해결 완료' : '해결 대기'}
-        : {st: d.status==='done' ? 'done' : 'na', label: '해당 없음'}
+        : (okNoIssue ? {st:'done', label:'해당 없음'} : {st:'todo', label:'수령 확인 후'})
   ];
 }
 const stepsHTML = d => stepsOf(d).map((s,i) =>
   `<span class="step" data-st="${s.st}"><i>${s.st==='done'?'✓':i+1}</i>${s.label}</span>`).join('');
+const needText = d => d.issue
+  ? '배송이슈 등록됨 · 풀무원샘물 회신 대기'
+  : '부분수령·미수령입니다. 이슈 유형을 선택해 주세요 · 풀무원샘물 회신 대기';
 
 function render(){
   $('list').innerHTML = FACILITIES.map(f => {
-    const d = data[f.no];
+    const d = data[f.no], n = f.no, nm = esc(f.name);
     return `
-    <article class="row ${selNo===f.no?'sel':''}" data-s="${d.status}" data-no="${f.no}" id="fac-${f.no}">
+    <article class="row ${selNo===n?'sel':''}" data-s="${d.status}" data-no="${n}" id="fac-${n}">
 
       <div class="rhead">
-        <div class="rname"><span class="no">${f.no}</span>${f.name}</div>
-        <div class="rqty">신청 ${f.box} BOX · ${f.ea.toLocaleString()}개</div>
+        <div class="rname"><span class="no">${n}</span>${nm}</div>
+        <div class="rqty">신청 ${f.box}BOX · ${f.ea.toLocaleString()}개</div>
         <div class="steps" data-steps>${stepsHTML(d)}</div>
       </div>
 
@@ -670,14 +757,14 @@ function render(){
       <div class="rstate">
         <div class="fieldline">
           <span>② 수령여부</span>
-          <div class="segbtns" role="group" aria-label="${f.name} 수령여부">
+          <div class="segbtns" role="group" aria-label="${nm} 수령여부">
             ${['done','part','miss'].map(v =>
               `<button data-act="status" data-v="${v}" aria-pressed="${d.status===v}">${STATUS_LABEL[v]}</button>`).join('')}
           </div>
         </div>
         <div class="fieldline">
-          <span>수령일</span>
-          <input type="date" class="dateinput" data-act="recvDate" value="${d.recvDate}" aria-label="${f.name} 수령일">
+          <label for="rd-${n}">수령일</label>
+          <input type="date" id="rd-${n}" class="dateinput" data-act="recvDate" value="${esc(d.recvDate)}">
         </div>
       </div>
 
@@ -690,7 +777,7 @@ function render(){
               <label class="ack pm ${d.shipStart?'on':''}">
                 <input type="checkbox" data-act="shipStart" ${d.shipStart?'checked':''}> 배송 시작함
               </label>
-              <input type="date" class="dateinput" data-act="shipDate" value="${d.shipDate}" aria-label="${f.name} 배송 시작일">
+              <input type="date" class="dateinput" data-act="shipDate" value="${esc(d.shipDate)}" aria-label="${nm} 배송 시작일">
             </div>
           </div>
         </div>
@@ -698,26 +785,27 @@ function render(){
         <div class="panel">
           <div class="panel-h"><b><span class="pn">2</span>배송이슈</b><span class="tag tag-fac">시설 담당자 작성</span></div>
           <div class="f">
-            <label>이슈 유형</label>
-            <select data-act="issue" class="${d.issue?'has-issue':''}">
+            <label for="is-${n}">이슈 유형</label>
+            <select id="is-${n}" data-act="issue" class="${d.issue?'has-issue':''}">
               <option value="">이슈 없음</option>
-              ${ISSUES.map(i=>`<option ${d.issue===i?'selected':''}>${i}</option>`).join('')}
+              ${ISSUES.map(i=>`<option ${d.issue===i?'selected':''}>${esc(i)}</option>`).join('')}
+              ${d.issue && !ISSUES.includes(d.issue) ? `<option selected>${esc(d.issue)}</option>` : ''}
             </select>
           </div>
           <div class="f">
-            <label>상세 내용</label>
-            <textarea data-act="issueNote"
-              placeholder="예: 15일 배송분 중 2BOX 외부 포장 젖음, 8BOX만 수령">${d.issueNote}</textarea>
+            <label for="in-${n}">상세 내용</label>
+            <textarea id="in-${n}" data-act="issueNote"
+              placeholder="예: 15일 배송분 중 2BOX 외부 포장 젖음, 8BOX만 수령">${esc(d.issueNote)}</textarea>
           </div>
         </div>
 
         <div class="panel pm">
-          <div class="panel-h"><b><span class="pn">3</span>확인·조치 의견</b><span class="tag tag-pm">담당자 회신(풀무원샘물, 월드비전)</span></div>
+          <div class="panel-h"><b><span class="pn">3</span>확인·조치 의견</b><span class="tag tag-pm">풀무원샘물·월드비전 회신</span></div>
           <div class="f">
-            <label>이슈 확인 결과 및 조치 계획</label>
-            <textarea data-act="pmNote" style="min-height:151px"
-              placeholder="예: 파손 2BOX 확인, 20일 재배송 예정 / 물류사에 포장 개선 요청">${d.pmNote}</textarea>
-            <div class="need" data-need>배송이슈 등록됨 · 풀무원샘물 회신 대기</div>
+            <label for="pn-${n}">이슈 확인 결과 및 조치 계획</label>
+            <textarea id="pn-${n}" data-act="pmNote" style="min-height:151px"
+              placeholder="예: 파손 2BOX 확인, 20일 재배송 예정 / 물류사에 포장 개선 요청">${esc(d.pmNote)}</textarea>
+            <div class="need" data-need>${needText(d)}</div>
           </div>
         </div>
 
@@ -729,13 +817,13 @@ function render(){
               <label class="ack ${d.resolved?'on':''}">
                 <input type="checkbox" data-act="resolved" ${d.resolved?'checked':''}> 문제 해결됨
               </label>
-              <input type="date" class="dateinput" data-act="resolveDate" value="${d.resolveDate}" aria-label="${f.name} 해결일">
+              <input type="date" class="dateinput" data-act="resolveDate" value="${esc(d.resolveDate)}" aria-label="${nm} 해결일">
             </div>
           </div>
           <div class="f">
-            <label>해결 결과 (재배송 수령 등)</label>
-            <textarea data-act="resolveNote" style="min-height:96px"
-              placeholder="이슈가 없으면 비워두셔도 됩니다. 예: 20일 재배송 2BOX 수령 완료">${d.resolveNote}</textarea>
+            <label for="rn-${n}">해결 결과 (재배송 수령 등)</label>
+            <textarea id="rn-${n}" data-act="resolveNote" style="min-height:96px"
+              placeholder="이슈가 없으면 비워두셔도 됩니다. 예: 20일 재배송 2BOX 수령 완료">${esc(d.resolveNote)}</textarea>
           </div>
         </div>
       </div>
@@ -745,6 +833,13 @@ function render(){
     </article>`;
   }).join('');
   bindRows(); refresh();
+}
+/* 입력 중에는 화면을 다시 그리지 않고, 입력이 끝난 뒤에 반영한다 */
+const typingNow = () => !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('#list [data-act]'));
+function softRender(){
+  if(typingNow()){ pendingRender = true; return; }
+  pendingRender = false;
+  const y = window.scrollY; render(); window.scrollTo(0, y);
 }
 
 function selectFac(no){
@@ -763,41 +858,49 @@ function bindRows(){
   $('list').querySelectorAll('.row').forEach(row => {
     const no = row.dataset.no;
     row.addEventListener('click', e => {
-      const b = e.target.closest('button[data-act="status"]'); if(!b) return;
-      data[no].status = (data[no].status === b.dataset.v) ? 'none' : b.dataset.v;
-      row.dataset.s = data[no].status;
+      const b = e.target.closest('button[data-act="status"]'); if(!b || !loaded) return;
+      const d = data[no];
+      d.status = (d.status === b.dataset.v) ? 'none' : b.dataset.v;
+      /* 수령일: 수령완료·부분수령이면 오늘로 채우고(이미 있으면 유지), 그 외에는 비운다 */
+      d.recvDate = (d.status === 'done' || d.status === 'part') ? (d.recvDate || today()) : '';
+      const di = row.querySelector('[data-act="recvDate"]'); if(di) di.value = d.recvDate;
+      row.dataset.s = d.status;
       row.querySelectorAll('button[data-act="status"]').forEach(x =>
-        x.setAttribute('aria-pressed', data[no].status === x.dataset.v));
+        x.setAttribute('aria-pressed', d.status === x.dataset.v));
       touch(no,'status'); afterEdit(row,no);
     });
     row.addEventListener('change', e => {
-      const el = e.target.closest('[data-act]'); if(!el || el.tagName==='BUTTON') return;
+      const el = e.target.closest('[data-act]'); if(!el || el.tagName==='BUTTON' || !loaded) return;
       const k = el.dataset.act;
       if(el.type === 'checkbox'){
         data[no][k] = el.checked;
         el.closest('.ack').classList.toggle('on', el.checked);
-        /* 체크하면 날짜를 오늘로 채워준다 (이미 있으면 유지) */
+        /* 체크하면 날짜를 오늘로 채우고(이미 있으면 유지), 해제하면 날짜도 비운다 */
         const dk = k==='shipStart' ? 'shipDate' : k==='resolved' ? 'resolveDate' : null;
-        if(dk && el.checked && !data[no][dk]){
-          data[no][dk] = today();
+        if(dk){
+          data[no][dk] = el.checked ? (data[no][dk] || today()) : '';
           const di = row.querySelector(`[data-act="${dk}"]`); if(di) di.value = data[no][dk];
         }
+      } else if(el.type === 'date'){
+        data[no][k] = isDate(el.value) ? el.value : '';
       } else data[no][k] = el.value;
       if(k==='issue') el.classList.toggle('has-issue', !!el.value);
       touch(no,k); afterEdit(row,no);
     });
     row.addEventListener('input', e => {
-      const el = e.target.closest('textarea[data-act]'); if(!el) return;
+      const el = e.target.closest('textarea[data-act]'); if(!el || !loaded) return;
       data[no][el.dataset.act] = el.value;
       touch(no, el.dataset.act);
-      needFlag(row, data[no]);
+      afterEdit(row, no);
     });
     needFlag(row, data[no]);
   });
 }
 function needFlag(row, d){
   const n = row.querySelector('[data-need]');
-  if(n) n.classList.toggle('on', !!(d.issue || d.status==='miss' || d.status==='part') && !d.pmNote.trim());
+  if(!n) return;
+  n.textContent = needText(d);
+  n.classList.toggle('on', hasIssueOf(d) && !d.pmNote.trim());
 }
 function afterEdit(row,no){
   const st = row.querySelector('[data-steps]'); if(st) st.innerHTML = stepsHTML(data[no]);
@@ -816,9 +919,9 @@ function refresh(){
     if(d.shipStart) ship++;
     if(d.status==='done') done++;
     if(d.status==='none') wait++;
-    opts += `<option value="${f.no}" ${selNo===f.no?'selected':''}>${f.no}. ${f.name}</option>`;
+    opts += `<option value="${f.no}" ${selNo===f.no?'selected':''}>${f.no}. ${esc(f.name)}</option>`;
   });
-  $('facSelect').innerHTML = opts;
+  if($('facSelect').dataset.opts !== opts){ $('facSelect').innerHTML = opts; $('facSelect').dataset.opts = opts; }
   $('facSelect').value = selNo || '';
   $('cDone').textContent = done; $('cIssue').textContent = issue;
   $('cWait').textContent = wait;
@@ -828,97 +931,120 @@ function refresh(){
 }
 function applyFilter(){
   const only = $('onlyIssue').checked, list = $('list');
-  list.classList.toggle('all', only || list.dataset.all === '1');
+  list.classList.toggle('all', list.dataset.all === '1');
   let shown = 0;
   list.querySelectorAll('.row').forEach(row => {
     const d = data[row.dataset.no];
-    const keep = !only || d.status!=='done' || !!d.issue;
+    const keep = !only || d.status!=='done' || hasIssueOf(d);
     row.classList.toggle('hide', !keep); if(keep) shown++;
   });
   const old = list.querySelector('.empty'); if(old) old.remove();
+  const all = list.classList.contains('all');
   if(only && shown===0){
     const e = document.createElement('div');
     e.className='empty'; e.textContent='이슈나 미확인 건이 없습니다. 이번 달 배송은 모두 정상 수령되었습니다.';
     list.appendChild(e);
   }
-  const all = list.classList.contains('all');
+  const selRow = selNo && $('fac-'+selNo);
+  const selHidden = !all && only && selRow && selRow.classList && selRow.classList.contains('hide');
+  if(selHidden){
+    const e = document.createElement('div');
+    e.className='empty'; e.textContent='선택한 기관은 이슈·미확인이 아니어서 «이슈·미확인만 보기» 필터에서 제외되었습니다. 필터를 끄면 볼 수 있습니다.';
+    list.appendChild(e);
+  }
   $('pickHint').style.display = (!all && !selNo) ? '' : 'none';
   const sel = selNo && FACILITIES.find(f => f.no === selNo);
-  $('pickSum').textContent = all ? '전체 기관을 한꺼번에 보는 중' : (sel ? `${sel.name} 상세 기록` : '');
+  $('pickSum').textContent = all ? (only ? '이슈·미확인 기관만 보는 중' : '전체 기관을 한꺼번에 보는 중') : (sel ? `${sel.name} 상세 기록` : '');
   syncToggleAll();
 }
 
+async function loadYear(){
+  $('yearNote').textContent = '월별 기록을 불러오는 중…';
+  const cache = {}, failed = [];
+  await Promise.all(MONTHS.map(async m => {
+    if(m === month && loaded){ cache[m] = data; return; }
+    try{
+      const r = await Store.get(key(m));
+      let raw = {}, stored = false;
+      if(r && r.value){ raw = rowsOf(r.value); stored = Object.keys(raw).length > 0; }
+      const o = rowsFrom(raw);
+      if(!stored) applyDefaults(m, o);
+      cache[m] = o;
+    }catch(e){ cache[m] = rowsFrom({}); failed.push(m); }   // 실패한 달은 기준값으로 채우지 않고 비워 둔다
+  }));
+  yearCache = cache; yearAt = Date.now(); yearCache.failed = failed;
+}
 $('btnYear').onclick = async () => {
   const box = $('year'), open = box.classList.toggle('on');
   $('btnYear').textContent = open ? '연간 현황 닫기' : '연간 현황 보기';
   if(!open) return;
   box.scrollIntoView({behavior:'smooth',block:'nearest'});
-  if(!yearCache){
-    $('yearNote').textContent = '월별 기록을 불러오는 중…';
-    yearCache = {};
-    for(const m of MONTHS){
-      if(m === month){ yearCache[m] = data; continue; }
-      try{ const r = await Store.get(key(m));
-           let raw = {}, stored = false;
-           if(r && r.value){ const j = JSON.parse(r.value);
-             raw = (j && j.rows) ? j.rows : (j || {}); stored = Object.keys(raw).length > 0; }
-           const o = {}; FACILITIES.forEach(f => o[f.no] = migrate(raw[f.no]));
-           if(!stored) applyDefaults(m, o);
-           yearCache[m] = o; }
-      catch(e){ const o={}; FACILITIES.forEach(f=>o[f.no]=blank()); applyDefaults(m,o); yearCache[m]=o; }
-    }
-  }
+  if(!yearCache || Date.now() - yearAt > 60000) await loadYear();   // 다른 담당자의 변경도 반영되도록 1분마다 새로 읽는다
   drawYear();
 };
 function drawYear(){
   if(!yearCache) return;
-  yearCache[month] = data;
+  if(loaded) yearCache[month] = data;
   let filled = 0;
-  const head = `<thead><tr><th>기관명</th>${MONTHS.map(m=>`<th>${m}월</th>`).join('')}<th>수령</th></tr></thead>`;
+  const head = `<thead><tr><th scope="col">기관명</th>${MONTHS.map(m=>`<th scope="col">${m}월</th>`).join('')}<th scope="col">수령</th></tr></thead>`;
   const body = FACILITIES.map(f => {
     let cnt = 0;
     const tds = MONTHS.map(m => {
-      const d = (yearCache[m]||{})[f.no] || {};
+      const d = (yearCache[m]||{})[f.no] || blank();
       const s = d.status || 'none';
       if(s==='done') cnt++;
       if(s!=='none') filled++;
-      const t = `${m}월 ${f.name} · ${STATUS_LABEL[s]}${d.recvDate?' · '+fmtDay(d.recvDate)+' 수령':''}${d.issue?' · '+d.issue:''}`;
-      return `<td class="${m===month?'cur':''}"><i class="dot ${d.issue?'iss':''}" ${s!=='none'?`data-s="${s}"`:''} title="${t}"></i></td>`;
+      const t = esc(`${m}월 ${f.name} · ${STATUS_LABEL[s]}${d.recvDate?' · '+fmtDay(d.recvDate)+' 수령':''}${d.issue?' · '+d.issue:''}`);
+      return `<td class="${m===month?'cur':''}"><i class="dot ${hasIssueOf(d)?'iss':''}" ${s!=='none'?`data-s="${s}"`:''} role="img" aria-label="${t}" title="${t}"></i></td>`;
     }).join('');
-    return `<tr><td>${f.no}. ${f.name}</td>${tds}<td><b>${cnt}</b>/${MONTHS.length}</td></tr>`;
+    return `<tr><th scope="row">${f.no}. ${esc(f.name)}</th>${tds}<td><b>${cnt}</b>/${MONTHS.length}</td></tr>`;
   }).join('');
   $('ytable').innerHTML = head + `<tbody>${body}</tbody>`;
-  $('yearNote').textContent = filled
-    ? `${YEAR}년 2월~12월 정기배송 · 기록된 건 ${filled}건 · 점 위에 커서를 올리면 상세가 보입니다.`
-    : '아직 기록된 월이 없습니다. 월 탭에서 수령여부를 입력하면 이 표에 쌓입니다.';
+  const fl = yearCache.failed || [];
+  $('yearNote').textContent = fl.length
+    ? `${fl.map(m => m + '월').join(', ')} 기록을 불러오지 못해 비워 두었습니다. 연간 현황을 닫았다 다시 열면 다시 시도합니다.`
+    : (filled
+      ? `${YEAR}년 2월~12월 정기배송 · 기록된 건 ${filled}건 · 점을 누르거나 위에 올리면 상세가 보입니다.`
+      : '아직 기록된 월이 없습니다. 월 탭에서 수령여부를 입력하면 이 표에 쌓입니다.');
 }
 
 function csv(){
-  const head = ['순번','기관명','신청BOX','신청낱개','수령여부','수령일','배송이슈유형','이슈내용(시설)','조치의견(풀무원샘물)','월드비전확인','풀무원확인','시설입력일시','월드비전확인일시','풀무원회신일시','배송시작','배송시작일','시설문제해결','해결일','해결내용'];
+  if(!loaded){ toast('불러오는 중입니다. 잠시 후 다시 눌러 주세요.'); return; }
+  const head = ['순번','기관명','신청BOX','신청낱개','수령여부','수령일','배송이슈유형','이슈내용(시설)','조치의견(풀무원샘물)','시설입력일시','풀무원샘물입력일시','배송시작','배송시작일','시설문제해결','해결일','해결내용'];
   const rows = FACILITIES.map(f => { const d = data[f.no];
     return [f.no,f.name,f.box,f.ea,STATUS_LABEL[d.status],d.recvDate||'미기재',d.issue||'이슈 없음',
-            d.issueNote,d.pmNote,d.ackWV?'확인':'',d.ackPM?'확인':'',d.atFac,d.atWV,d.atPM,d.shipStart?'시작':'',d.shipDate,d.resolved?'해결':'',d.resolveDate,d.resolveNote]; });
-  const esc = v => `"${String(v??'').replace(/"/g,'""')}"`;
+            d.issueNote,d.pmNote,d.atFac,d.atPM,d.shipStart?'시작':'',d.shipDate,d.resolved?'해결':'',d.resolveDate,d.resolveNote]; });
+  /* 엑셀이 = + - @ 로 시작하는 글자를 수식으로 실행하지 않도록 앞에 ' 를 붙인다 */
+  const safe = v => { const s = String(v ?? ''); return /^[=+\-@\t\r]/.test(s) ? "'" + s : s; };
+  const esc2 = v => `"${safe(v).replace(/"/g,'""')}"`;
   const body = [ [`${YEAR}년 ${month}월 풀무원샘물 생수 정기배송 수령 확인`], head, ...rows ]
-    .map(r => r.map(esc).join(',')).join('\r\n');
-  const blob = new Blob(['\uFEFF'+body], {type:'text/csv;charset=utf-8'});
+    .map(r => r.map(esc2).join(',')).join('\r\n');
+  const blob = new Blob(['﻿'+body], {type:'text/csv;charset=utf-8'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `풀무원샘물_정기배송_수령확인_${YEAR}년${month}월.csv`;
-  a.click(); URL.revokeObjectURL(a.href);
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
   toast('CSV 파일을 내려받았습니다');
 }
 
+let releaseArmed = null;
 function syncBulkLabels(){
   const allShip = FACILITIES.every(f => data[f.no] && data[f.no].shipStart);
-  $('btnShipAll').textContent = allShip ? '배송 시작 해제' : '배송 일괄 시작';
+  $('btnShipAll').textContent = releaseArmed ? '한 번 더 누르면 해제됩니다' : (allShip ? '배송 시작 해제' : '배송 일괄 시작');
   if(!$('shipAllDate').value) $('shipAllDate').value = today();
 }
 /* ── 풀무원샘물 일괄 배송 시작 (10개 기관 동시 출고) ── */
 function bulkShip(){
+  if(!loaded){ toast('불러오는 중입니다. 잠시 후 다시 눌러 주세요.'); return; }
   const to = !FACILITIES.every(f => data[f.no].shipStart);
   const n = FACILITIES.filter(f => data[f.no].shipStart !== to).length;
   if(!n){ toast('바뀔 항목이 없습니다'); return; }
+  if(!to && !releaseArmed){                         // 해제는 실수 방지를 위해 두 번 눌러야 한다
+    releaseArmed = setTimeout(() => { releaseArmed = null; syncBulkLabels(); }, 3500);
+    syncBulkLabels(); return;
+  }
+  clearTimeout(releaseArmed); releaseArmed = null;
   const day = ($('shipAllDate').value || today());
   const stamp = now();
   FACILITIES.forEach(f => {
@@ -927,51 +1053,56 @@ function bulkShip(){
     d.shipStart = to; d.seed = false; d.atPM = stamp;
     d.shipDate = to ? day : '';
   });
-  dirty = true; render(); save(true);
+  dirty = true; render(); save();
   toast(to ? `${n}개 기관을 배송 시작 처리했습니다 (${fmtDay(day)})` : `${n}개 기관의 배송 시작을 해제했습니다`);
 }
 
 $('btnShipAll').onclick = () => bulkShip();
 $('btnToggleAll').onclick = () => {
-  const l = $('list'); l.dataset.all = l.dataset.all === '1' ? '' : '1';
+  const l = $('list');
+  if(l.dataset.all === '1'){ l.dataset.all = ''; $('onlyIssue').checked = false; } else l.dataset.all = '1';
   applyFilter();
 };
-$('facSelect').onchange = e => { $('list').dataset.all = ''; selectFac(+e.target.value); };
-$('onlyIssue').onchange = applyFilter;
+$('facSelect').onchange = e => { $('list').dataset.all = ''; $('onlyIssue').checked = false; selectFac(+e.target.value); };
+$('onlyIssue').onchange = () => { $('list').dataset.all = $('onlyIssue').checked ? '1' : ''; applyFilter(); };
 $('btnCsv').onclick = csv;
 $('btnPrint').onclick = () => window.print();
+$('saveerr').addEventListener('click', e => { if(e.target.closest && e.target.closest('[data-retry]')) loadMonth(); });
 document.addEventListener('focusout', e => {
-  if(dirty && e.target.closest('textarea[data-act], select[data-act], input[data-act]')) save(true);
+  if(dirty && e.target.closest('textarea[data-act], select[data-act], input[data-act]')) save();
+  if(pendingRender) setTimeout(() => { if(pendingRender && !typingNow()) softRender(); }, 0);
 });
 /* 창을 닫거나 탭을 벗어날 때 — 남은 입력을 확실히 보낸다 */
 window.addEventListener('pagehide', () => {
-  if(!dirty) return;
+  if(!dirty || !loaded) return;
+  const body = payload();
+  cacheWrite(key(month), body);
   if(API_URL && navigator.sendBeacon){
-    const body = JSON.stringify({key:key(month), value:payload()});
-    navigator.sendBeacon(API_URL, new Blob([body], {type:'text/plain;charset=utf-8'}));
-    dirty = false;
-  } else save(true);
+    const ok = navigator.sendBeacon(API_URL, new Blob([JSON.stringify({key:key(month), value:body})], {type:'text/plain;charset=utf-8'}));
+    if(ok) dirty = false;
+  } else save();
 });
-document.addEventListener('visibilitychange', () => { if(document.hidden && dirty) save(true); });
+document.addEventListener('visibilitychange', () => { if(document.hidden && dirty) save(); });
+window.addEventListener('pageshow', e => { if(e.persisted) loadMonth(); });   // 뒤로가기로 돌아왔을 때 최신 내용으로
 
 /* 다른 담당자가 입력한 내용을 45초마다 자동으로 가져온다 */
 let pollTimer = null;
 function startPoll(){
   clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
-    if(dirty || document.hidden) return;
-    if(document.activeElement && document.activeElement.closest('[data-act]')) return;
+    if(!loaded || dirty || savingP || document.hidden || typingNow()) return;
+    const m = month, my = loadSeq, k = key(m);
     try{
-      const r = await Store.get(key(month));
+      const r = await Store.get(k);
       if(!r || !r.value) return;
-      const j = JSON.parse(r.value);
-      const rows = (j && j.rows) ? j.rows : j;
-      const fresh = {};
-      FACILITIES.forEach(f => fresh[f.no] = migrate(rows[f.no]));
+      if(m !== month || my !== loadSeq || !loaded || dirty || savingP || typingNow()) return;   // 기다리는 사이 상황이 바뀌었으면 버린다
+      const fresh = rowsFrom(rowsOf(r.value));
       if(JSON.stringify(fresh) === JSON.stringify(data)) return;
-      data = fresh;
+      data = fresh; base = snapshot(data);
+      cacheWrite(k, r.value);
       const y = window.scrollY; render(); window.scrollTo(0, y);
       metaText();
+      if(yearCache){ yearCache[m] = data; if($('year').classList.contains('on')) drawYear(); }
       const d = new Date();
       setSaveState('saved', `최신 반영 ${pad(d.getHours())}:${pad(d.getMinutes())}`);
     }catch(e){}
@@ -982,7 +1113,15 @@ if(Store.mode === 'local') $('localnote').classList.add('on');
 function showSaveError(err){
   const box = $('saveerr');
   if(box === NOOP_EL) return;
-  box.innerHTML = '<b>저장에 실패했습니다.</b><br>' + String(err && err.message || err);
+  box.innerHTML = '<b>저장하지 못했습니다.</b><br>' + esc(err && err.message || err);
+  box.classList.add('on');
+}
+function showLoadError(err){
+  const box = $('saveerr');
+  if(box === NOOP_EL) return;
+  box.innerHTML = '<b>최신 내용을 불러오지 못해 입력을 잠시 막았습니다.</b> (다른 담당자의 기록을 덮어쓰지 않도록 보호하는 동작입니다)<br>'
+    + esc(err && err.message || err)
+    + '<br><button class="btn" data-retry type="button">다시 불러오기</button>';
   box.classList.add('on');
 }
 function showFatal(err){
@@ -990,8 +1129,8 @@ function showFatal(err){
   box.style.cssText = 'margin:18px 0;padding:14px 16px;border-radius:6px;background:#FCF2F2;'
     + 'border:1px solid #E8B4B4;color:#8A1F1F;font-size:13px;line-height:1.7';
   box.innerHTML = '<b>페이지를 불러오지 못했습니다.</b><br>'
-    + 'index.html 이 완전히 업로드되지 않았을 수 있습니다. 파일 전체를 다시 올린 뒤 Ctrl+F5 로 새로고침해 주세요.'
-    + '<br><span style="color:#B06060">기술 정보: ' + String(err && err.message || err) + '</span>';
+    + '잠시 후 Ctrl+F5(모바일은 새로고침)로 다시 열어 주세요. 계속되면 관리자에게 문의해 주세요.'
+    + '<br><span style="color:#B06060">기술 정보: ' + esc(err && err.message || err) + '</span>';
   const wrap = document.querySelector('.wrap');
   if(wrap) wrap.prepend(box); else document.body.prepend(box);
 }
@@ -1004,3 +1143,5 @@ try{
   showFatal(err);
 }
 </script>
+</body>
+</html>
